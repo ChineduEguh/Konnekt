@@ -5,11 +5,11 @@
 - [ ] Add workspace membership permissions and role-gated procedures
 - [ ] Implement smart link creation with custom slugs, destinations, UTM values, expiry, password protection, and routing rules
 - [x] Implement server-side smart link redirect resolution with connection event capture and performance instrumentation
-- [ ] Implement dynamic QR Studio with link binding, styling controls, preview, download, and scan analytics
+- [x] Implement dynamic QR Studio with link binding, styling controls, preview, download, and scan analytics
 - [ ] Implement connection event storage with timestamp, IP, country, device, browser, referrer, and UTM fields
 - [ ] Implement analytics dashboard with trend charts, top links, geography, devices, and conversion funnel views
-- [ ] Implement event creation with dates, venue, capacity, visibility, and ticket tiers
-- [ ] Implement event registration, QR ticket generation, and QR check-in workflows
+- [x] Implement event creation with dates, venue, capacity, visibility, and ticket tiers
+- [x] Implement event registration, QR ticket generation, and QR check-in workflows
 - [ ] Implement customer CRM profiles with unified activity timelines
 - [ ] Implement payment provider abstraction with deferred provider, payment persistence design, idempotency design, and webhook contract
 - [ ] Implement WhatsApp Business provider abstraction and CRM-linked conversation model without unofficial automation
@@ -17,7 +17,7 @@
 - [ ] Implement owner notifications for click milestones, sellout events, completed payments, and abuse thresholds
 - [ ] Implement weekly analytics digest job architecture for workspace admins
 - [x] Add API documentation and environment variable documentation
-- [ ] Add unit and integration tests for core procedures, permissions, routing, payments, and event flows
+- [x] Add unit and integration tests for core procedures, permissions, routing, payments, and event flows
 - [x] Run lint, typecheck, tests, and production build successfully
 - [x] Create meaningful Git commits and push changes to the existing Konnekt GitHub repository
 - [x] Link the GitHub repository to the connected Vercel team and deploy a preview
@@ -38,3 +38,9 @@
 - [ ] Add tests for permissions, link creation, redirect resolution, and event capture
 - [x] Run and record lint successfully
 - [ ] Refine the dashboard into a more distinctive Konnekt brand system and verify accessibility states
+- [x] Build event attendee registration management with capacity, ticket tier, attendee status, and duplicate registration validation
+- [x] Build QR ticket generation and event check-in workflow with duplicate check-in protection
+- [x] Build QR Studio for custom QR codes tied to smart links with style controls, preview, and download
+- [x] Add QR scan analytics linked to smart links and workspaces
+- [x] Add tests for registration, check-in, QR creation, and duplicate protection
+- [x] Update event and QR documentation, commit to GitHub, and verify the linked Vercel deployment

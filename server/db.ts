@@ -5,8 +5,11 @@ import {
   User,
   connectionEvents,
   contacts,
+  eventRegistrations,
   events,
+  qrCodes,
   smartLinks,
+  ticketTiers,
   users,
   workspaceMembers,
   workspaces,
@@ -216,6 +219,128 @@ export async function findLinkBySlug(slug: string) {
     .select()
     .from(smartLinks)
     .where(and(eq(smartLinks.slug, slug), eq(smartLinks.active, true)))
+    .limit(1);
+  return rows[0];
+}
+
+export async function listWorkspaceEvents(workspaceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(events)
+    .where(eq(events.workspaceId, workspaceId))
+    .orderBy(desc(events.startsAt))
+    .limit(20);
+}
+
+export async function createWorkspaceEvent(input: typeof events.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(events).values(input);
+  const rows = await db
+    .select()
+    .from(events)
+    .where(eq(events.id, Number(result[0].insertId)))
+    .limit(1);
+  return rows[0];
+}
+
+export async function listEventRegistrations(eventId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(eventRegistrations)
+    .where(eq(eventRegistrations.eventId, eventId))
+    .orderBy(desc(eventRegistrations.registeredAt));
+}
+
+export async function registerAttendee(
+  input: typeof eventRegistrations.$inferInsert
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const eventRows = await db
+    .select({ capacity: events.capacity })
+    .from(events)
+    .where(eq(events.id, input.eventId))
+    .limit(1);
+  const event = eventRows[0];
+  if (!event) throw new Error("Event not found");
+  const [registered] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(eventRegistrations)
+    .where(
+      and(
+        eq(eventRegistrations.eventId, input.eventId),
+        eq(eventRegistrations.status, "registered")
+      )
+    );
+  if (event.capacity && Number(registered?.count ?? 0) >= event.capacity)
+    throw new Error("Event capacity reached");
+  const result = await db.insert(eventRegistrations).values(input);
+  const rows = await db
+    .select()
+    .from(eventRegistrations)
+    .where(eq(eventRegistrations.id, Number(result[0].insertId)))
+    .limit(1);
+  return rows[0];
+}
+
+export async function findRegistrationByTicketCode(ticketCode: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(eventRegistrations)
+    .where(eq(eventRegistrations.ticketCode, ticketCode))
+    .limit(1);
+  return rows[0];
+}
+
+export async function checkInRegistration(ticketCode: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const registration = await findRegistrationByTicketCode(ticketCode);
+  if (!registration) return { status: "not_found" as const };
+  if (registration.status === "checked_in")
+    return { status: "already_checked_in" as const, registration };
+  if (registration.status === "cancelled")
+    return { status: "cancelled" as const, registration };
+  await db
+    .update(eventRegistrations)
+    .set({ status: "checked_in", checkedInAt: new Date() })
+    .where(eq(eventRegistrations.id, registration.id));
+  return {
+    status: "checked_in" as const,
+    registration: {
+      ...registration,
+      status: "checked_in" as const,
+      checkedInAt: new Date(),
+    },
+  };
+}
+
+export async function listWorkspaceQrCodes(workspaceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(qrCodes)
+    .where(eq(qrCodes.workspaceId, workspaceId))
+    .orderBy(desc(qrCodes.createdAt))
+    .limit(20);
+}
+
+export async function createQrCode(input: typeof qrCodes.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(qrCodes).values(input);
+  const rows = await db
+    .select()
+    .from(qrCodes)
+    .where(eq(qrCodes.id, Number(result[0].insertId)))
     .limit(1);
   return rows[0];
 }

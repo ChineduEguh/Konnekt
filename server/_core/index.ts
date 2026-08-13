@@ -54,7 +54,7 @@ async function startServer() {
       void recordConnectionEvent({
         workspaceId: link.workspaceId,
         linkId: link.id,
-        eventType: "click",
+        eventType: req.query.source === "qr" ? "scan" : "click",
         ipAddress:
           String(req.headers["x-forwarded-for"] || "").split(",")[0] || null,
         referrer: req.headers.referer || null,
