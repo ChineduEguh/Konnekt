@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
+import { findLinkBySlug, recordConnectionEvent } from "../db";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -36,6 +37,37 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  app.get("/r/:slug", async (req, res) => {
+    const startedAt = performance.now();
+    try {
+      const link = await findLinkBySlug(req.params.slug);
+      if (!link) return res.status(404).json({ error: "connection-not-found" });
+      if (link.expiresAt && link.expiresAt.getTime() < Date.now())
+        return res.status(410).json({ error: "connection-expired" });
+      const destination = new URL(link.destinationUrl);
+      if (link.utmSource)
+        destination.searchParams.set("utm_source", link.utmSource);
+      if (link.utmMedium)
+        destination.searchParams.set("utm_medium", link.utmMedium);
+      if (link.utmCampaign)
+        destination.searchParams.set("utm_campaign", link.utmCampaign);
+      void recordConnectionEvent({
+        workspaceId: link.workspaceId,
+        linkId: link.id,
+        eventType: "click",
+        ipAddress:
+          String(req.headers["x-forwarded-for"] || "").split(",")[0] || null,
+        referrer: req.headers.referer || null,
+        metadata: {
+          userAgent: req.headers["user-agent"] || null,
+          resolutionMs: Number((performance.now() - startedAt).toFixed(2)),
+        },
+      });
+      return res.redirect(302, destination.toString());
+    } catch {
+      return res.status(500).json({ error: "connection-resolution-failed" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

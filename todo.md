@@ -1,0 +1,40 @@
+# Project TODO
+
+- [ ] Propose and implement a distinctive Konnekt visual system with responsive dashboard layout and accessible interaction states
+- [x] Establish multi-tenant workspace data model with owner, admin, and member roles
+- [ ] Add workspace membership permissions and role-gated procedures
+- [ ] Implement smart link creation with custom slugs, destinations, UTM values, expiry, password protection, and routing rules
+- [x] Implement server-side smart link redirect resolution with connection event capture and performance instrumentation
+- [ ] Implement dynamic QR Studio with link binding, styling controls, preview, download, and scan analytics
+- [ ] Implement connection event storage with timestamp, IP, country, device, browser, referrer, and UTM fields
+- [ ] Implement analytics dashboard with trend charts, top links, geography, devices, and conversion funnel views
+- [ ] Implement event creation with dates, venue, capacity, visibility, and ticket tiers
+- [ ] Implement event registration, QR ticket generation, and QR check-in workflows
+- [ ] Implement customer CRM profiles with unified activity timelines
+- [ ] Implement payment provider abstraction with deferred provider, payment persistence design, idempotency design, and webhook contract
+- [ ] Implement WhatsApp Business provider abstraction and CRM-linked conversation model without unofficial automation
+- [ ] Implement assistive LLM workflows for slug suggestions, UTM generation, and analytics summaries without blocking core actions
+- [ ] Implement owner notifications for click milestones, sellout events, completed payments, and abuse thresholds
+- [ ] Implement weekly analytics digest job architecture for workspace admins
+- [x] Add API documentation and environment variable documentation
+- [ ] Add unit and integration tests for core procedures, permissions, routing, payments, and event flows
+- [x] Run lint, typecheck, tests, and production build successfully
+- [ ] Create meaningful Git commits and push changes to the existing Konnekt GitHub repository
+- [ ] Link the GitHub repository to the connected Vercel team and deploy a preview
+- [ ] Verify the deployed preview and document implemented, provider-dependent, partially implemented, and future capabilities
+- [ ] Record remaining limitations, security notes, and next highest-value roadmap items
+
+## Change History
+
+- [ ] Clarified requirements added: multi-tenant workspace, smart links, redirect performance target, QR Studio, analytics, events, CRM, Stripe-first payments abstraction, WhatsApp layer, assistive LLM workflows, notifications, and weekly digest architecture
+- [x] Defer concrete payment gateway implementation and document the payment provider abstraction as provider-dependent for a future gateway integration
+- [ ] Implement role-based workspace authorization checks and admin or owner-gated procedures
+- [ ] Add password hashing, password validation, and routing rule input and enforcement for smart links
+- [ ] Populate country, device, browser, and UTM fields during redirect event capture
+- [ ] Add payment tables and document idempotency and webhook persistence design in code or docs
+- [ ] Implement CRM-linked WhatsApp conversation storage and contact association
+- [ ] Replace deterministic campaign helpers with real LLM-backed workflows or clearly mark them partial
+- [ ] Add a real weekly digest scheduler and delivery handler under /api/scheduled/
+- [ ] Add tests for permissions, link creation, redirect resolution, and event capture
+- [x] Run and record lint successfully
+- [ ] Refine the dashboard into a more distinctive Konnekt brand system and verify accessibility states
