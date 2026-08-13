@@ -27,3 +27,9 @@ Workspace procedures use authenticated sessions and validate membership before l
 ## Testing
 
 `pnpm lint` runs Prettier checks, `pnpm check` runs TypeScript validation, `pnpm test` runs Vitest, and `pnpm build` produces the client and server bundles. Current tests cover session logout, deferred providers, and digest window preparation. Additional integration coverage is still required for database-backed routing, permissions, events, QR flows, and CRM timelines.
+
+## Event operations and QR Studio
+
+Event operations now include published event creation, attendee registration with email uniqueness per event, unique ticket codes, attendee listing, and protected check-in. A second check-in returns `already_checked_in` instead of mutating the record again. Registration records are persisted in `eventRegistrations`, and ticket state is represented by `registered`, `cancelled`, or `checked_in`.
+
+QR Studio stores dynamic QR assets in `qrCodes`, each bound to a smart link. The client uses the QR encoding library to render a live PNG preview with configurable foreground color, background color, module shape presentation, and frame label. Downloads preserve the QR as a PNG, while the destination remains the smart link redirect path so it can be edited later without reprinting the physical asset.

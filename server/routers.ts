@@ -4,14 +4,22 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { createTicketCode } from "./eventHelpers";
 import {
+  checkInRegistration,
+  createQrCode,
+  createWorkspaceEvent,
   createWorkspaceLink,
   findLinkBySlug,
   getOrCreateWorkspace,
   getWorkspaceLinks,
   getWorkspaceMembership,
   getWorkspaceSummary,
+  listEventRegistrations,
+  listWorkspaceEvents,
+  listWorkspaceQrCodes,
   recordConnectionEvent,
+  registerAttendee,
 } from "./db";
 
 const slugSchema = z
@@ -139,6 +147,81 @@ export const appRouter = router({
           metadata: { userAgent: ctx.req.headers["user-agent"] || null },
         });
         return { found: true as const, destinationUrl: url.toString() };
+      }),
+  }),
+  events: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const workspace = await getOrCreateWorkspace(ctx.user);
+      return workspace ? listWorkspaceEvents(workspace.id) : [];
+    }),
+    create: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(2).max(200),
+          description: z.string().max(5000).optional(),
+          venue: z.string().max(240).optional(),
+          startsAt: z.date(),
+          capacity: z.number().int().positive().optional(),
+          status: z.enum(["draft", "published", "ended"]).default("draft"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        return createWorkspaceEvent({
+          ...input,
+          workspaceId: workspace.id,
+          createdBy: ctx.user.id,
+        });
+      }),
+    registrations: protectedProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .query(({ input }) => listEventRegistrations(input.eventId)),
+    register: publicProcedure
+      .input(
+        z.object({
+          eventId: z.number().int().positive(),
+          ticketTierId: z.number().int().positive().optional(),
+          workspaceId: z.number().int().positive(),
+          attendeeName: z.string().min(2).max(180),
+          attendeeEmail: z.string().email(),
+          attendeePhone: z.string().max(40).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const ticketCode = createTicketCode();
+        return registerAttendee({ ...input, ticketCode });
+      }),
+    checkIn: protectedProcedure
+      .input(z.object({ ticketCode: z.string().min(4).max(80) }))
+      .mutation(({ input }) => checkInRegistration(input.ticketCode)),
+  }),
+  qr: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const workspace = await getOrCreateWorkspace(ctx.user);
+      return workspace ? listWorkspaceQrCodes(workspace.id) : [];
+    }),
+    create: protectedProcedure
+      .input(
+        z.object({
+          smartLinkId: z.number().int().positive(),
+          name: z.string().min(2).max(160),
+          foregroundColor: z
+            .string()
+            .regex(/^#[0-9A-Fa-f]{6}$/)
+            .default("#003D32"),
+          backgroundColor: z
+            .string()
+            .regex(/^#[0-9A-Fa-f]{6}$/)
+            .default("#DDF8EC"),
+          shape: z.enum(["square", "dots", "rounded"]).default("rounded"),
+          frameLabel: z.string().max(80).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        return createQrCode({ ...input, workspaceId: workspace.id });
       }),
   }),
   ai: router({

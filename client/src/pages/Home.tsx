@@ -250,10 +250,14 @@ export default function Home() {
               className={`nav-item ${index === 0 ? "active" : ""}`}
               key={item.label}
               onClick={() =>
-                index !== 0 &&
-                toast.info(
-                  `${item.label} workspace is ready for your next build step`
-                )
+                index === 2
+                  ? (window.location.href = "/qr-studio")
+                  : index === 3
+                    ? (window.location.href = "/events")
+                    : index !== 0 &&
+                      toast.info(
+                        `${item.label} workspace is ready for your next build step`
+                      )
               }
             >
               <item.icon size={17} />

@@ -140,6 +140,53 @@ export const ticketTiers = mysqlTable("ticketTiers", {
   capacity: int("capacity"),
 });
 
+export const eventRegistrations = mysqlTable(
+  "eventRegistrations",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    eventId: int("eventId").notNull(),
+    ticketTierId: int("ticketTierId"),
+    workspaceId: int("workspaceId").notNull(),
+    attendeeName: varchar("attendeeName", { length: 180 }).notNull(),
+    attendeeEmail: varchar("attendeeEmail", { length: 320 }).notNull(),
+    attendeePhone: varchar("attendeePhone", { length: 40 }),
+    ticketCode: varchar("ticketCode", { length: 80 }).notNull().unique(),
+    status: mysqlEnum("status", ["registered", "cancelled", "checked_in"])
+      .default("registered")
+      .notNull(),
+    registeredAt: timestamp("registeredAt").defaultNow().notNull(),
+    checkedInAt: timestamp("checkedInAt"),
+  },
+  table => ({
+    eventEmailIdx: uniqueIndex("event_registration_email_unique").on(
+      table.eventId,
+      table.attendeeEmail
+    ),
+    ticketCodeIdx: index("event_registration_ticket_code_idx").on(
+      table.ticketCode
+    ),
+  })
+);
+
+export const qrCodes = mysqlTable("qrCodes", {
+  id: int("id").autoincrement().primaryKey(),
+  workspaceId: int("workspaceId").notNull(),
+  smartLinkId: int("smartLinkId").notNull(),
+  name: varchar("name", { length: 160 }).notNull(),
+  foregroundColor: varchar("foregroundColor", { length: 16 })
+    .default("#003D32")
+    .notNull(),
+  backgroundColor: varchar("backgroundColor", { length: 16 })
+    .default("#DDF8EC")
+    .notNull(),
+  shape: mysqlEnum("shape", ["square", "dots", "rounded"])
+    .default("rounded")
+    .notNull(),
+  frameLabel: varchar("frameLabel", { length: 80 }),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const contacts = mysqlTable("contacts", {
   id: int("id").autoincrement().primaryKey(),
   workspaceId: int("workspaceId").notNull(),
@@ -154,4 +201,6 @@ export const contacts = mysqlTable("contacts", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type SmartLink = typeof smartLinks.$inferSelect;
+export type EventRegistration = typeof eventRegistrations.$inferSelect;
+export type QrCode = typeof qrCodes.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
