@@ -12,7 +12,7 @@
 - [x] Implement event registration, QR ticket generation, and QR check-in workflows
 - [ ] Implement customer CRM profiles with unified activity timelines
 - [x] Implement payment provider abstraction with deferred provider, payment persistence design, idempotency design, and webhook contract
-- [ ] Implement WhatsApp Business provider abstraction and CRM-linked conversation model without unofficial automation
+- [x] Implement WhatsApp Business provider abstraction and CRM-linked conversation model without unofficial automation
 - [x] Implement assistive LLM workflows for slug suggestions, UTM generation, and analytics summaries without blocking core actions
 - [ ] Implement owner notifications for click milestones, sellout events, completed payments, and abuse thresholds
 - [x] Implement weekly analytics digest job architecture for workspace admins
@@ -32,7 +32,7 @@
 - [x] Add password hashing, password validation, and routing rule input and enforcement for smart links
 - [x] Populate country, device, browser, and UTM fields during redirect event capture
 - [x] Add payment tables and document idempotency and webhook persistence design in code or docs
-- [ ] Implement CRM-linked WhatsApp conversation storage and contact association
+- [x] Implement CRM-linked WhatsApp conversation storage and contact association
 - [x] Replace deterministic campaign helpers with real LLM-backed workflows or clearly mark them partial
 - [ ] Add a real weekly digest scheduler and delivery handler under /api/scheduled/
 - [x] Add tests for permissions, link creation, redirect resolution, and event capture
@@ -80,3 +80,5 @@
 - [x] Audit and fix dark-mode contrast across workspace, Analytics, QR Studio, Events, mobile overlays, tabs, charts, forms, badges, and page headers
 - [x] Remove dark-mode mobile overflow and clipped content visible in the workspace screenshot
 - [x] Verify dark-mode readability at mobile and desktop widths and checkpoint the regression fix
+- [x] Allow Smart Link destinations to accept any user-entered or pasted URL and optionally select an existing shortened link
+- [x] Validate and document Smart Link destination entry and shortened-link selection behavior

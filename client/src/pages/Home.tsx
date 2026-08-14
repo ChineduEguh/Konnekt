@@ -5,6 +5,13 @@ import { trpc } from "@/lib/trpc";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -86,6 +93,7 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [slug, setSlug] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
+  const [selectedExistingLinkId, setSelectedExistingLinkId] = useState("");
   const [customDomain, setCustomDomain] = useState(() => {
     const stored = localStorage.getItem("konnekt-custom-domain") || "";
     if (stored.trim().toLowerCase() === "elevationng.org") {
@@ -110,6 +118,7 @@ export default function Home() {
       summaryQuery.refetch();
       setSlug("");
       setDestinationUrl("");
+      setSelectedExistingLinkId("");
       toast.success("Smart link created");
     },
     onError: error => toast.error(error.message),
@@ -509,12 +518,48 @@ export default function Home() {
                     <label>Destination URL</label>
                     <Input
                       value={destinationUrl}
-                      onChange={e => setDestinationUrl(e.target.value)}
+                      onChange={e => {
+                        setDestinationUrl(e.target.value);
+                        setSelectedExistingLinkId("");
+                      }}
                       placeholder="google.com or www.google.com"
                     />
                     <span className="mt-1 block text-xs text-slate-500">
-                      Protocol is added automatically.
+                      Paste any URL. Protocol is added automatically.
                     </span>
+                    <Select
+                      value={selectedExistingLinkId}
+                      onValueChange={value => {
+                        const selected = currentLinks.find(
+                          link => String(link.id) === value
+                        );
+                        if (!selected) return;
+                        setSelectedExistingLinkId(value);
+                        setDestinationUrl(
+                          `https://${selected.customDomain || customDomain.trim() || window.location.host}/${selected.slug}`
+                        );
+                      }}
+                    >
+                      <SelectTrigger className="mt-2 h-9 rounded-lg bg-white text-xs">
+                        <SelectValue placeholder="Or select an existing shortened link" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currentLinks.length ? (
+                          currentLinks.map(link => (
+                            <SelectItem key={link.id} value={String(link.id)}>
+                              {link.customDomain ||
+                                customDomain.trim() ||
+                                "knkt.af"}
+                              /{link.slug}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-links" disabled>
+                            No shortened links available yet
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <label>Custom slug</label>
