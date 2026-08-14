@@ -11,6 +11,9 @@ import {
   Sparkles,
   CheckCircle2,
   ExternalLink,
+  FileText,
+  History,
+  Trash2,
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -22,6 +25,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { normalizeHttpUrl } from "../../../shared/urls";
+import {
+  appendLogoToSvg,
+  canSaveQr,
+  getQrExportFilename,
+} from "../../../shared/qrStudio";
 
 export default function QrStudio() {
   const { isAuthenticated, loading } = useAuth();
@@ -53,6 +61,13 @@ export default function QrStudio() {
     onSuccess: () => {
       qrList.refetch();
       toast.success("QR code saved to your studio");
+    },
+    onError: e => toast.error(e.message),
+  });
+  const removeQr = trpc.qr.remove.useMutation({
+    onSuccess: () => {
+      qrList.refetch();
+      toast.success("QR asset removed");
     },
     onError: e => toast.error(e.message),
   });
@@ -125,12 +140,95 @@ export default function QrStudio() {
         </Card>
       </div>
     );
-  function download() {
-    if (!preview) return;
+  const filename = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "konnekt-qr"}`;
+  function triggerDownload(url: string, extension: string) {
     const anchor = document.createElement("a");
-    anchor.href = preview;
-    anchor.download = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "konnekt-qr"}.png`;
+    anchor.href = url;
+    anchor.download = getQrExportFilename(name, extension);
     anchor.click();
+  }
+  function downloadPng() {
+    if (preview) triggerDownload(preview, "png");
+  }
+  async function downloadSvg() {
+    const svg = await QRCode.toString(target, {
+      type: "svg",
+      margin: 2,
+      color: { dark: foregroundColor, light: backgroundColor },
+      errorCorrectionLevel: "H",
+    });
+    const withLogo = appendLogoToSvg(svg, logoDataUrl);
+    triggerDownload(
+      `data:image/svg+xml;charset=utf-8,${encodeURIComponent(withLogo)}`,
+      "svg"
+    );
+  }
+  function downloadPdf() {
+    if (!preview) return;
+    const jpegUrl = document.createElement("canvas");
+    jpegUrl.width = 720;
+    jpegUrl.height = 720;
+    const context = jpegUrl.getContext("2d");
+    const image = new Image();
+    image.onload = () => {
+      context?.drawImage(image, 0, 0, 720, 720);
+      const jpeg = jpegUrl.toDataURL("image/jpeg", 0.92);
+      const binary = atob(jpeg.split(",")[1]);
+      const imageBytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+      const encoder = new TextEncoder();
+      const objects = [
+        "1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n",
+        "2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n",
+        "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 720 720] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>endobj\n",
+        `4 0 obj<< /Type /XObject /Subtype /Image /Width 720 /Height 720 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>stream\n`,
+        "5 0 obj<< /Length 31 >>stream\nq\n720 0 0 720 0 0 cm\n/Im0 Do\nQ\nendstream\nendobj\n",
+      ];
+      const header = encoder.encode("%PDF-1.4\n");
+      const chunks: BlobPart[] = [header as unknown as ArrayBuffer];
+      const offsets = [0];
+      let position = header.length;
+      for (let index = 0; index < objects.length; index += 1) {
+        offsets.push(position);
+        const head = encoder.encode(objects[index]);
+        chunks.push(head as unknown as ArrayBuffer);
+        position += head.length;
+        if (index === 3) {
+          chunks.push(imageBytes as unknown as ArrayBuffer);
+          position += imageBytes.length;
+          const tail = encoder.encode("\nendstream\nendobj\n");
+          chunks.push(tail as unknown as ArrayBuffer);
+          position += tail.length;
+        }
+      }
+      const xref = position;
+      const table = encoder.encode(
+        `xref\n0 6\n0000000000 65535 f \n${offsets
+          .slice(1)
+          .map(offset => `${String(offset).padStart(10, "0")} 00000 n `)
+          .join(
+            "\n"
+          )}\ntrailer<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
+      );
+      chunks.push(table as unknown as ArrayBuffer);
+      triggerDownload(
+        URL.createObjectURL(new Blob(chunks, { type: "application/pdf" })),
+        "pdf"
+      );
+    };
+    image.src = preview;
+  }
+  function loadQrAsset(qr: NonNullable<typeof qrList.data>[number]) {
+    setName(qr.name);
+    setLinkId(qr.smartLinkId ?? null);
+    setManualUrl(qr.destinationUrl ?? "");
+    setForegroundColor(qr.foregroundColor);
+    setBackgroundColor(qr.backgroundColor);
+    setShape(qr.shape as typeof shape);
+    setFrameLabel(qr.frameLabel ?? "SCAN TO CONNECT");
+    setLogoDataUrl(qr.logoUrl ?? "");
+    setLogoName(qr.logoUrl ? "Saved centre logo" : "");
+    setDestinationTested(false);
+    toast.success("QR asset loaded into the editor");
   }
   return (
     <div className="qr-studio-shell min-h-screen bg-[#f5f7f9] p-5 text-slate-900 md:p-10">
@@ -355,7 +453,11 @@ export default function QrStudio() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   disabled={
-                    (!linkId && !manualUrl.trim()) || createQr.isPending
+                    !canSaveQr({
+                      smartLinkId: linkId,
+                      destinationUrl: manualUrl,
+                      isValidManualUrl: Boolean(manualUrlValidation),
+                    }) || createQr.isPending
                   }
                   className="rounded-full bg-[#003d32] text-white hover:bg-[#0b6b4f]"
                   onClick={() =>
@@ -377,9 +479,25 @@ export default function QrStudio() {
                   variant="outline"
                   disabled={!preview}
                   className="rounded-full"
-                  onClick={download}
+                  onClick={downloadPng}
                 >
-                  <Download size={15} /> Download PNG
+                  <Download size={15} /> PNG
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={!preview}
+                  className="rounded-full"
+                  onClick={() => void downloadSvg()}
+                >
+                  <Download size={15} /> SVG
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={!preview}
+                  className="rounded-full"
+                  onClick={downloadPdf}
+                >
+                  <FileText size={15} /> PDF
                 </Button>
               </div>
             </CardContent>
@@ -477,7 +595,9 @@ export default function QrStudio() {
         </div>
         <Card className="mt-5 rounded-2xl border-[#dfe9e4] shadow-sm">
           <CardHeader>
-            <CardTitle className="text-[#003d32]">Saved QR assets</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-[#003d32]">
+              <History size={18} /> Recent QR history
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {qrList.data?.length ? (
@@ -494,9 +614,28 @@ export default function QrStudio() {
                       </Badge>
                     </div>
                     <strong className="block text-sm">{qr.name}</strong>
-                    <span className="mt-1 block text-xs text-slate-500">
-                      {qr.frameLabel || "Dynamic QR asset"}
+                    <span className="mt-1 block truncate text-xs text-slate-500">
+                      {qr.destinationUrl ||
+                        `Smart link ${qr.smartLinkId ?? ""}`}
                     </span>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadQrAsset(qr)}
+                      >
+                        Use again
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        disabled={removeQr.isPending}
+                        onClick={() => removeQr.mutate({ id: qr.id })}
+                      >
+                        <Trash2 size={14} /> Remove
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

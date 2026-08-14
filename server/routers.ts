@@ -9,6 +9,7 @@ import { storagePut } from "./storage";
 import {
   checkInRegistration,
   createQrCode,
+  deleteQrCode,
   createWorkspaceEvent,
   createWorkspaceContact,
   createWorkspaceLink,
@@ -417,6 +418,20 @@ export const appRouter = router({
       if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
       return workspace ? listWorkspaceQrCodes(workspace.id) : [];
     }),
+    remove: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id, [
+          "owner",
+          "admin",
+          "member",
+        ]);
+        const removed = await deleteQrCode(workspace.id, input.id);
+        if (!removed) throw new Error("QR asset not found");
+        return { success: true };
+      }),
     create: protectedProcedure
       .input(
         z.object({

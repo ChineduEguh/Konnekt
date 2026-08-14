@@ -90,3 +90,7 @@
 - [x] Add a test-destination button beside the QR Studio URL input
 - [x] Add visible success feedback for valid manual URLs and selected smart links
 - [x] Validate, checkpoint, and synchronize the QR Studio enhancement to the connected repository and managed deployment
+- [x] Add QR Studio foreground and background colour customization with central logo support
+- [x] Add a recent QR history section with access and management actions
+- [x] Add PNG, SVG, and PDF download options for generated QR codes
+- [ ] Add tests, responsive verification, documentation, checkpoint, and GitHub or managed deployment synchronization for the QR Studio enhancement
