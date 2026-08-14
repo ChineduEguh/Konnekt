@@ -14,12 +14,16 @@ import {
   findLinkBySlug,
   getOrCreateWorkspace,
   getWorkspaceLinks,
+  getContactWorkspaceId,
   getEventWorkspaceId,
   getRegistrationWorkspaceId,
   getSmartLinkWorkspaceId,
   requireWorkspaceRole,
   setWorkspaceScheduleCronTaskUid,
   getWorkspaceSummary,
+  getOrCreateWhatsappConversation,
+  createWhatsappMessage,
+  listWhatsappMessages,
   getQrScanAnalytics,
   listEventRegistrations,
   listWorkspaceEvents,
@@ -30,6 +34,7 @@ import {
 import {
   detectBrowser,
   detectDevice,
+  isContactInWorkspace,
   hashPassword,
   matchesRoutingRules,
   normalizeRoutingRules,
@@ -278,6 +283,55 @@ export const appRouter = router({
         if (!workspaceId) throw new Error("Ticket not found");
         await requireWorkspaceRole(workspaceId, ctx.user.id);
         return checkInRegistration(input.ticketCode);
+      }),
+  }),
+  conversations: router({
+    timeline: protectedProcedure
+      .input(z.object({ contactId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id);
+        const contactWorkspaceId = await getContactWorkspaceId(input.contactId);
+        if (!isContactInWorkspace(contactWorkspaceId, workspace.id))
+          throw new Error("Contact access denied");
+        const conversation = await getOrCreateWhatsappConversation(
+          workspace.id,
+          input.contactId
+        );
+        if (!conversation) return [];
+        return listWhatsappMessages(conversation.id);
+      }),
+    record: protectedProcedure
+      .input(
+        z.object({
+          contactId: z.number().int().positive(),
+          direction: z.enum(["inbound", "outbound"]),
+          body: z.string().min(1).max(4000),
+          providerMessageId: z.string().max(160).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id);
+        const contactWorkspaceId = await getContactWorkspaceId(input.contactId);
+        if (!isContactInWorkspace(contactWorkspaceId, workspace.id))
+          throw new Error("Contact access denied");
+        const conversation = await getOrCreateWhatsappConversation(
+          workspace.id,
+          input.contactId
+        );
+        if (!conversation)
+          throw new Error("Conversation could not be initialized");
+        return createWhatsappMessage({
+          conversationId: conversation.id,
+          direction: input.direction,
+          body: input.body,
+          providerMessageId: input.providerMessageId,
+          deliveryStatus:
+            input.direction === "inbound" ? "received" : "deferred",
+        });
       }),
   }),
   analytics: router({

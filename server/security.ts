@@ -45,6 +45,13 @@ export function matchesRoutingRules(
   return true;
 }
 
+export function isContactInWorkspace(
+  contactWorkspaceId: number | undefined,
+  workspaceId: number
+) {
+  return contactWorkspaceId === workspaceId;
+}
+
 export function isWorkspaceRoleAllowed(
   role: "owner" | "admin" | "member" | null | undefined,
   allowedRoles: Array<"owner" | "admin" | "member">

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   hashPassword,
+  isContactInWorkspace,
   isWorkspaceRoleAllowed,
   matchesRoutingRules,
   normalizeRoutingRules,
@@ -15,6 +16,12 @@ describe("security helpers", () => {
     expect(first).not.toBe(second);
     expect(verifyPassword("correct horse battery staple", first)).toBe(true);
     expect(verifyPassword("wrong password", first)).toBe(false);
+  });
+
+  it("enforces contact workspace isolation", () => {
+    expect(isContactInWorkspace(7, 7)).toBe(true);
+    expect(isContactInWorkspace(8, 7)).toBe(false);
+    expect(isContactInWorkspace(undefined, 7)).toBe(false);
   });
 
   it("enforces workspace role boundaries", () => {

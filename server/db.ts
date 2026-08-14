@@ -13,6 +13,8 @@ import {
   users,
   workspaceMembers,
   workspaces,
+  whatsappConversations,
+  whatsappMessages,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { isWorkspaceRoleAllowed } from "./security";
@@ -148,6 +150,75 @@ export async function setWorkspaceScheduleCronTaskUid(
     .update(workspaces)
     .set({ scheduleCronTaskUid: taskUid })
     .where(eq(workspaces.id, workspaceId));
+}
+
+export async function getContactWorkspaceId(contactId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select({ workspaceId: contacts.workspaceId })
+    .from(contacts)
+    .where(eq(contacts.id, contactId))
+    .limit(1);
+  return rows[0]?.workspaceId;
+}
+
+export async function getOrCreateWhatsappConversation(
+  workspaceId: number,
+  contactId: number
+) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const existing = await db
+    .select()
+    .from(whatsappConversations)
+    .where(
+      and(
+        eq(whatsappConversations.workspaceId, workspaceId),
+        eq(whatsappConversations.contactId, contactId),
+        eq(whatsappConversations.status, "open")
+      )
+    )
+    .limit(1);
+  if (existing[0]) return existing[0];
+  const inserted = await db.insert(whatsappConversations).values({
+    workspaceId,
+    contactId,
+  });
+  const rows = await db
+    .select()
+    .from(whatsappConversations)
+    .where(eq(whatsappConversations.id, Number(inserted[0].insertId)))
+    .limit(1);
+  return rows[0];
+}
+
+export async function createWhatsappMessage(input: {
+  conversationId: number;
+  direction: "inbound" | "outbound";
+  body: string;
+  deliveryStatus?: "received" | "queued" | "sent" | "failed" | "deferred";
+  providerMessageId?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const inserted = await db.insert(whatsappMessages).values(input);
+  const rows = await db
+    .select()
+    .from(whatsappMessages)
+    .where(eq(whatsappMessages.id, Number(inserted[0].insertId)))
+    .limit(1);
+  return rows[0];
+}
+
+export async function listWhatsappMessages(conversationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(whatsappMessages)
+    .where(eq(whatsappMessages.conversationId, conversationId))
+    .orderBy(whatsappMessages.createdAt);
 }
 
 export async function getWorkspaceByScheduleCronTaskUid(taskUid: string) {

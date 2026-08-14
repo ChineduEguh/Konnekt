@@ -200,6 +200,49 @@ export const contacts = mysqlTable("contacts", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+export const whatsappConversations = mysqlTable(
+  "whatsappConversations",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    workspaceId: int("workspaceId").notNull(),
+    contactId: int("contactId").notNull(),
+    providerConversationId: varchar("providerConversationId", { length: 160 }),
+    status: mysqlEnum("status", ["open", "closed"]).default("open").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    workspaceContactIdx: index(
+      "whatsapp_conversation_workspace_contact_idx"
+    ).on(table.workspaceId, table.contactId),
+  })
+);
+export const whatsappMessages = mysqlTable(
+  "whatsappMessages",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    conversationId: int("conversationId").notNull(),
+    providerMessageId: varchar("providerMessageId", { length: 160 }),
+    direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
+    body: text("body").notNull(),
+    deliveryStatus: mysqlEnum("deliveryStatus", [
+      "received",
+      "queued",
+      "sent",
+      "failed",
+      "deferred",
+    ])
+      .default("deferred")
+      .notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    conversationTimeIdx: index("whatsapp_message_conversation_time_idx").on(
+      table.conversationId,
+      table.createdAt
+    ),
+  })
+);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
