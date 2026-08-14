@@ -86,3 +86,7 @@
 - [x] Restore Smart Link destination form to its prior behavior without the existing-link selector
 - [x] Allow QR Studio to accept either an existing smart link or any manually entered URL for QR generation
 - [x] Validate and document the corrected QR Studio destination workflow
+- [x] Add real-time validation for manually entered QR Studio URLs
+- [x] Add a test-destination button beside the QR Studio URL input
+- [x] Add visible success feedback for valid manual URLs and selected smart links
+- [ ] Validate, checkpoint, and synchronize the QR Studio enhancement to the connected repository and managed deployment

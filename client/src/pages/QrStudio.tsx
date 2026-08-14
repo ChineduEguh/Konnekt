@@ -9,6 +9,8 @@ import {
   Palette,
   QrCode,
   Sparkles,
+  CheckCircle2,
+  ExternalLink,
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -19,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import { normalizeHttpUrl } from "../../../shared/urls";
 
 export default function QrStudio() {
   const { isAuthenticated, loading } = useAuth();
@@ -28,6 +31,7 @@ export default function QrStudio() {
   const qrList = trpc.qr.list.useQuery(undefined, { enabled: isAuthenticated });
   const [linkId, setLinkId] = useState<number | null>(null);
   const [manualUrl, setManualUrl] = useState("");
+  const [destinationTested, setDestinationTested] = useState(false);
   const [name, setName] = useState("Campaign QR");
   const [foregroundColor, setForegroundColor] = useState("#003D32");
   const [backgroundColor, setBackgroundColor] = useState("#DDF8EC");
@@ -53,6 +57,10 @@ export default function QrStudio() {
     onError: e => toast.error(e.message),
   });
   const selected = links.data?.find(link => link.id === linkId);
+  const manualUrlValidation = manualUrl.trim()
+    ? normalizeHttpUrl(manualUrl)
+    : null;
+  const manualUrlHasError = Boolean(manualUrl.trim() && !manualUrlValidation);
   const normalizeQrDestination = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return "https://konnekt.af/connect?source=qr";
@@ -172,18 +180,54 @@ export default function QrStudio() {
               </label>
               <label className="block text-xs font-semibold text-slate-600">
                 QR destination URL
-                <Input
-                  className="mt-1"
-                  value={manualUrl}
-                  onChange={e => {
-                    setManualUrl(e.target.value);
-                    if (e.target.value.trim()) setLinkId(null);
-                  }}
-                  placeholder="google.com or https://your-site.com"
-                />
-                <span className="mt-1 block text-[11px] font-normal text-slate-400">
-                  Type or paste any URL. Protocol is added automatically.
-                </span>
+                <div className="mt-1 flex gap-2">
+                  <Input
+                    value={manualUrl}
+                    aria-invalid={manualUrlHasError}
+                    onChange={e => {
+                      setManualUrl(e.target.value);
+                      setDestinationTested(false);
+                      if (e.target.value.trim()) setLinkId(null);
+                    }}
+                    placeholder="google.com or https://your-site.com"
+                    className={manualUrlHasError ? "border-red-400" : ""}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!manualUrlValidation}
+                    className="shrink-0 px-3"
+                    title="Test destination URL"
+                    onClick={() => {
+                      if (!manualUrlValidation) return;
+                      setDestinationTested(true);
+                      window.open(
+                        manualUrlValidation,
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
+                    }}
+                  >
+                    <ExternalLink size={14} />
+                    <span className="hidden sm:inline">Test link</span>
+                  </Button>
+                </div>
+                {manualUrlHasError ? (
+                  <span className="mt-1 block text-[11px] font-medium text-red-600">
+                    Enter a valid URL, such as google.com or
+                    https://your-site.com.
+                  </span>
+                ) : manualUrlValidation ? (
+                  <span className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                    <CheckCircle2 size={13} className="animate-pulse" />
+                    Valid destination: {manualUrlValidation}
+                    {destinationTested ? " Test opened." : ""}
+                  </span>
+                ) : (
+                  <span className="mt-1 block text-[11px] font-normal text-slate-400">
+                    Type or paste any URL. Protocol is added automatically.
+                  </span>
+                )}
               </label>
               <label className="block text-xs font-semibold text-slate-600">
                 Or choose an existing smart link
@@ -193,6 +237,7 @@ export default function QrStudio() {
                   onChange={e => {
                     setLinkId(Number(e.target.value) || null);
                     setManualUrl("");
+                    setDestinationTested(false);
                   }}
                 >
                   <option value="">Choose a smart link</option>
@@ -202,6 +247,12 @@ export default function QrStudio() {
                     </option>
                   ))}
                 </select>
+                {selected ? (
+                  <span className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                    <CheckCircle2 size={13} className="animate-pulse" />
+                    Smart link selected and ready for QR generation.
+                  </span>
+                ) : null}
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <label className="block text-xs font-semibold text-slate-600">

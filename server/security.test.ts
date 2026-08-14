@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { normalizeHttpUrl } from "../shared/urls";
 import {
   hashPassword,
   isContactInWorkspace,
@@ -9,6 +10,16 @@ import {
 } from "./security";
 
 describe("security helpers", () => {
+  it("normalizes valid QR destinations and rejects invalid protocols", () => {
+    expect(normalizeHttpUrl("google.com")).toBe("https://google.com/");
+    expect(normalizeHttpUrl("https://example.com/path")).toBe(
+      "https://example.com/path"
+    );
+    expect(normalizeHttpUrl("ftp://example.com")).toBeNull();
+    expect(normalizeHttpUrl("not a url")).toBeNull();
+    expect(normalizeHttpUrl(" ")).toBeNull();
+  });
+
   it("hashes passwords with unique salted scrypt hashes", () => {
     const first = hashPassword("correct horse battery staple");
     const second = hashPassword("correct horse battery staple");
