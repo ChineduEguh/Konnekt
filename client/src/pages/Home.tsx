@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { useTheme } from "@/contexts/ThemeContext";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -86,11 +86,15 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [slug, setSlug] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
-  const [customDomain, setCustomDomain] = useState(
-    () => localStorage.getItem("konnekt-custom-domain") || ""
-  );
+  const [customDomain, setCustomDomain] = useState(() => {
+    const stored = localStorage.getItem("konnekt-custom-domain") || "";
+    if (stored.trim().toLowerCase() === "elevationng.org") {
+      localStorage.removeItem("konnekt-custom-domain");
+      return "";
+    }
+    return stored;
+  });
   const [campaign, setCampaign] = useState("");
-  const { theme, toggleTheme } = useTheme();
   const workspaceQuery = trpc.workspace.current.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -326,15 +330,7 @@ export default function Home() {
             <h1>Good morning, {user?.name?.split(" ")[0] || "there"}.</h1>
           </div>
           <div className="header-actions">
-            <button
-              type="button"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              className="theme-toggle"
-              onClick={() => toggleTheme?.()}
-            >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
+            <ThemeToggle />
             <a
               href="/analytics"
               className="hidden rounded-full border border-[#b7dfcf] bg-white px-4 py-2 text-sm font-semibold text-[#0b6b4f] transition hover:bg-[#f1fbf6] sm:inline-flex"
@@ -546,7 +542,7 @@ export default function Home() {
                           e.target.value
                         );
                       }}
-                      placeholder="elevationng.org"
+                      placeholder="yourbrand.com"
                     />
                   </div>
                 </div>

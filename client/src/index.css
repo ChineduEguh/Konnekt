@@ -1387,3 +1387,40 @@ textarea::placeholder {
   button:not([class*="bg-[#003d32]"]):not([class*="bg-[#0b6b4f]"]) {
   color: #edf8f3 !important;
 }
+
+.theme-toggle {
+  width: auto;
+  min-width: 36px;
+  gap: 6px;
+  padding: 0 11px;
+  font-weight: 700;
+}
+.theme-toggle-label {
+  font-size: 12px;
+  line-height: 1;
+}
+@media (max-width: 640px) {
+  .theme-toggle {
+    min-width: 42px;
+    min-height: 38px;
+    padding: 0 10px;
+  }
+  .theme-toggle-label {
+    display: inline;
+  }
+  .header-actions,
+  .analytics-actions {
+    width: 100%;
+  }
+  .app-header .theme-toggle {
+    margin-left: auto;
+  }
+}
+
+.dark [class*="bg-[#ddf8ec]"],
+.dark [class*="bg-[#d9f8ec]"],
+.dark [class*="bg-[#f1fbf6]"],
+.dark [class*="bg-[#eaf7f1]"] {
+  background: #214f3e !important;
+  color: #e6f7ef !important;
+}

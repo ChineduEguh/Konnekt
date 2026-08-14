@@ -74,3 +74,6 @@
 - [x] Add copy actions for shortened links
 - [x] Add custom short-domain support and use it in shortened-link displays instead of forcing knkt.af
 - [x] Validate URL, theme, tooltip, QR preview, copy, and custom-domain flows and checkpoint the update
+- [x] Remove the prefilled elevationng.org custom-domain example and replace it with a neutral empty placeholder
+- [x] Make the light or dark mode toggle clearly visible at the top right on every authenticated app page
+- [x] Verify custom-domain displays and theme-toggle placement at mobile and desktop widths, then checkpoint the update

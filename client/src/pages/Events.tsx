@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -164,10 +165,13 @@ export default function Events() {
               duplicate entries.
             </p>
           </div>
-          <Badge className="rounded-full bg-[#ddf8ec] px-3 py-1 text-[#087443] hover:bg-[#ddf8ec]">
-            <ClipboardCheck size={14} className="mr-1" /> Workspace{" "}
-            {workspace.data?.name || "ready"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Badge className="page-header-badge hidden rounded-full bg-[#ddf8ec] px-3 py-1 text-[#087443] hover:bg-[#ddf8ec] sm:flex">
+              <ClipboardCheck size={14} className="mr-1" /> Workspace{" "}
+              {workspace.data?.name || "ready"}
+            </Badge>
+          </div>
         </div>
         <div className="grid gap-5 lg:grid-cols-[.8fr_1.2fr]">
           <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
