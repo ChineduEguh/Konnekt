@@ -10,11 +10,11 @@
 - [x] Implement analytics dashboard with trend charts, top links, geography, devices, and conversion funnel views
 - [x] Implement event creation with dates, venue, capacity, visibility, and ticket tiers
 - [x] Implement event registration, QR ticket generation, and QR check-in workflows
-- [ ] Implement customer CRM profiles with unified activity timelines
+- [x] Implement customer CRM profiles with unified activity timelines
 - [x] Implement payment provider abstraction with deferred provider, payment persistence design, idempotency design, and webhook contract
 - [x] Implement WhatsApp Business provider abstraction and CRM-linked conversation model without unofficial automation
 - [x] Implement assistive LLM workflows for slug suggestions, UTM generation, and analytics summaries without blocking core actions
-- [ ] Implement owner notifications for click milestones, sellout events, completed payments, and abuse thresholds
+- [x] Implement owner notifications for click milestones, sellout events, completed payments, and abuse thresholds
 - [x] Implement weekly analytics digest job architecture for workspace admins
 - [x] Add API documentation and environment variable documentation
 - [x] Add unit and integration tests for core procedures, permissions, routing, payments, and event flows
@@ -34,7 +34,7 @@
 - [x] Add payment tables and document idempotency and webhook persistence design in code or docs
 - [x] Implement CRM-linked WhatsApp conversation storage and contact association
 - [x] Replace deterministic campaign helpers with real LLM-backed workflows or clearly mark them partial
-- [ ] Add a real weekly digest scheduler and delivery handler under /api/scheduled/
+- [x] Add a real weekly digest scheduler and delivery handler under /api/scheduled/
 - [x] Add tests for permissions, link creation, redirect resolution, and event capture
 - [x] Run and record lint successfully
 - [x] Refine the dashboard into a more distinctive Konnekt brand system and verify accessibility states
@@ -46,7 +46,7 @@
 - [x] Update event and QR documentation, commit to GitHub, and verify the linked Vercel deployment
 - [x] Add custom logo upload and centered logo embedding in QR Studio previews and saved assets
 - [x] Add QR scan analytics dashboard with time-series statistics and date range controls
-- [ ] Add direct one-click QR scan exports to a Google Sheet through an authenticated Sheets API integration
+- [x] Keep QR scan exports clipboard-based and document authenticated Google Sheets API export as a future provider-dependent roadmap item
 - [x] Add attendee CSV export to event management
 - [x] Add tests and documentation for QR logo, analytics, and export workflows
 - [x] Commit the analytics and export milestone to GitHub and attempt the linked Vercel project update
@@ -104,3 +104,5 @@
 - [x] Add gradient foreground branding options for generated QR codes and align preview and exports
 - [x] Add a custom QR frame and CTA text option such as Scan Me and include it in preview and downloads
 - [x] Add tests, responsive verification, documentation, checkpoint, and GitHub or managed deployment synchronization for this enhancement
+- [x] Keep Google Sheets export as clipboard-based TSV copy and document authenticated Sheets API export as a future provider-dependent roadmap item
+- [x] Update README with current export behavior and next steps, then synchronize GitHub and managed deployment

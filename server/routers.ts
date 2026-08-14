@@ -9,6 +9,7 @@ import { storagePut } from "./storage";
 import {
   checkInRegistration,
   createQrCode,
+  createPaymentRecord,
   deleteQrCode,
   createWorkspaceEvent,
   createWorkspaceContact,
@@ -372,6 +373,29 @@ export const appRouter = router({
           deliveryStatus:
             input.direction === "inbound" ? "received" : "deferred",
         });
+      }),
+  }),
+  payments: router({
+    record: protectedProcedure
+      .input(
+        z.object({
+          provider: z.string().min(2).max(80),
+          providerReference: z.string().max(180).optional(),
+          idempotencyKey: z.string().min(8).max(180),
+          amountMinor: z.number().int().nonnegative(),
+          currency: z.string().length(3),
+          status: z.enum(["pending", "succeeded", "failed", "refunded"]),
+          metadata: z.record(z.string(), z.unknown()).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id, [
+          "owner",
+          "admin",
+        ]);
+        return createPaymentRecord({ ...input, workspaceId: workspace.id });
       }),
   }),
   analytics: router({

@@ -15,6 +15,7 @@ import {
   workspaces,
   whatsappConversations,
   whatsappMessages,
+  payments,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { isWorkspaceRoleAllowed } from "./security";
@@ -779,6 +780,26 @@ export async function createQrCode(input: typeof qrCodes.$inferInsert) {
   return rows[0];
 }
 
+export async function createPaymentRecord(input: typeof payments.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.insert(payments).values(input);
+  const rows = await db
+    .select()
+    .from(payments)
+    .where(eq(payments.id, Number(result[0].insertId)))
+    .limit(1);
+  if (input.status === "succeeded") {
+    void notifyWorkspaceOwner({
+      workspaceId: input.workspaceId,
+      type: "payment_completed",
+      title: "Payment completed",
+      body: `${input.currency} ${(input.amountMinor / 100).toFixed(2)} was marked as completed.`,
+    });
+  }
+  return rows[0];
+}
+
 export async function recordConnectionEvent(
   input: typeof connectionEvents.$inferInsert
 ) {
@@ -802,6 +823,25 @@ export async function recordConnectionEvent(
         type: "click_milestone",
         title: `${totalClicks.toLocaleString()} clicks captured`,
         body: "Your connection layer reached a new click milestone.",
+      });
+    }
+    const [recentClicks] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(connectionEvents)
+      .where(
+        and(
+          eq(connectionEvents.workspaceId, input.workspaceId),
+          eq(connectionEvents.eventType, "click"),
+          sql`${connectionEvents.occurredAt} >= ${new Date(Date.now() - 60_000)}`
+        )
+      );
+    const clickRate = Number(recentClicks?.count ?? 0);
+    if (clickRate >= 1000 && clickRate % 1000 === 0) {
+      void notifyWorkspaceOwner({
+        workspaceId: input.workspaceId,
+        type: "abuse_threshold",
+        title: "Unusual click volume detected",
+        body: `${clickRate.toLocaleString()} clicks were recorded in the last minute.`,
       });
     }
   }

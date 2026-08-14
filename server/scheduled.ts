@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { getWorkspaceByScheduleCronTaskUid, getWorkspaceSummary } from "./db";
 import { compileWeeklyDigest } from "./providers";
 import { sdk } from "./_core/sdk";
+import { notifyOwner } from "./_core/notification";
 
 export async function handleWeeklyDigest(req: Request, res: Response) {
   const timestamp = new Date().toISOString();
@@ -25,8 +26,17 @@ export async function handleWeeklyDigest(req: Request, res: Response) {
       revenueMinor: 0,
       recipients: [],
     });
+    const delivered = await notifyOwner({
+      title: `${workspace.name} weekly digest`,
+      content: [
+        `Clicks: ${digest.clicks}`,
+        `QR scans: ${digest.scans}`,
+        `Registrations: ${digest.registrations}`,
+        "Delivery uses the configured owner notification channel.",
+      ].join("\n"),
+    });
 
-    return res.json({ ok: true, digest });
+    return res.json({ ok: true, digest: { ...digest, delivered } });
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : "weekly-digest-failed",
