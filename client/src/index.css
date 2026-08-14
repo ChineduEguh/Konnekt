@@ -1733,3 +1733,129 @@ textarea::placeholder {
 .dark .qr-custom-frame {
   background: #f5fffa !important;
 }
+
+/* Shared icon consistency layer */
+:root {
+  --icon-green-bg: #e0f6eb;
+  --icon-green-fg: #0b845d;
+  --icon-orange-bg: #fff0e5;
+  --icon-orange-fg: #b85f27;
+  --icon-blue-bg: #e8efff;
+  --icon-blue-fg: #5068bd;
+  --icon-purple-bg: #f2eafd;
+  --icon-purple-fg: #7a4ea6;
+  --icon-neutral-bg: #eef5f1;
+  --icon-neutral-fg: #0b7657;
+  --icon-border: #cfe2d9;
+}
+
+.metric-icon,
+.activity-icon,
+.link-symbol,
+.card-icon,
+.chart-orb,
+.empty-icon {
+  border: 1px solid var(--icon-border);
+  flex: 0 0 auto;
+}
+
+.metric-icon,
+.activity-icon,
+.link-symbol,
+.card-icon {
+  color: var(--icon-neutral-fg);
+}
+
+.metric-icon svg,
+.activity-icon svg,
+.link-symbol svg,
+.card-icon svg,
+.chart-orb svg,
+.empty-icon svg,
+.nav-item svg,
+.mobile-menu svg,
+.mobile-close svg,
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.1;
+}
+
+.chart-orb svg,
+.empty-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.metric-icon.green {
+  background: var(--icon-green-bg);
+  color: var(--icon-green-fg);
+}
+
+.metric-icon.orange {
+  background: var(--icon-orange-bg);
+  color: var(--icon-orange-fg);
+}
+
+.metric-icon.blue {
+  background: var(--icon-blue-bg);
+  color: var(--icon-blue-fg);
+}
+
+.metric-icon.purple {
+  background: var(--icon-purple-bg);
+  color: var(--icon-purple-fg);
+}
+
+.chart-orb,
+.empty-icon,
+.activity-icon,
+.link-symbol,
+.card-icon {
+  background: var(--icon-neutral-bg);
+}
+
+.nav-item svg,
+.sidebar-bottom svg,
+.header-actions svg,
+.mobile-menu svg,
+.mobile-close svg {
+  color: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dark {
+  --icon-green-bg: #1b4b3d;
+  --icon-green-fg: #8fe2bd;
+  --icon-orange-bg: #4f3528;
+  --icon-orange-fg: #ffc49a;
+  --icon-blue-bg: #283d67;
+  --icon-blue-fg: #b8c8ff;
+  --icon-purple-bg: #49345d;
+  --icon-purple-fg: #e0beff;
+  --icon-neutral-bg: #1d4437;
+  --icon-neutral-fg: #9ce6c6;
+  --icon-border: #527b6b;
+}
+
+.dark .metric-icon,
+.dark .activity-icon,
+.dark .link-symbol,
+.dark .card-icon,
+.dark .chart-orb,
+.dark .empty-icon {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.dark .metric-icon.green,
+.dark .metric-icon.orange,
+.dark .metric-icon.blue,
+.dark .metric-icon.purple,
+.dark .chart-orb,
+.dark .empty-icon,
+.dark .activity-icon,
+.dark .link-symbol,
+.dark .card-icon {
+  border-color: var(--icon-border) !important;
+}

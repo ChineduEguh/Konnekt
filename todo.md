@@ -116,3 +116,7 @@
 - [x] Add Analytics smart-link and QR scan visual trend charts with date-range comparison filters
 - [x] Add Analytics trend indicators comparing the selected range with the preceding equivalent period
 - [x] Add tests, responsive verification, documentation, GitHub synchronization, and managed deployment checkpoint for this enhancement
+- [x] Standardize metric-card, navigation, chart, and empty-state icon sizes and stroke weights across light and dark modes
+- [x] Replace hard-coded icon colours and backgrounds with theme-safe semantic icon tokens across shared workspace surfaces
+- [x] Validate icon contrast and alignment at mobile and desktop widths in both themes
+- [x] Add tests, documentation, GitHub synchronization, and a managed deployment checkpoint for the icon consistency fix
