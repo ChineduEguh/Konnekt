@@ -89,4 +89,4 @@
 - [x] Add real-time validation for manually entered QR Studio URLs
 - [x] Add a test-destination button beside the QR Studio URL input
 - [x] Add visible success feedback for valid manual URLs and selected smart links
-- [ ] Validate, checkpoint, and synchronize the QR Studio enhancement to the connected repository and managed deployment
+- [x] Validate, checkpoint, and synchronize the QR Studio enhancement to the connected repository and managed deployment
