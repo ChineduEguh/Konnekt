@@ -63,3 +63,7 @@
 - [x] Add font customization controls to Event and QR Studio creative settings
 - [x] Add image and video creative import controls to Event and QR Studio
 - [x] Validate responsive behavior, add tests and documentation, checkpoint, and publish source updates
+- [x] Audit all product pages and shared components for unreadable foreground and background combinations
+- [x] Fix shared button, badge, muted text, card, tab, input, and mobile overlay contrast tokens
+- [x] Apply contrast fixes consistently across workspace overview, Analytics, QR Studio, Events, and other product pages
+- [x] Validate contrast at mobile and desktop widths, update documentation, and checkpoint the fix

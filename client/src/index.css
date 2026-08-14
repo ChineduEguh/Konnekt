@@ -1039,3 +1039,100 @@ button:active {
     min-height: 44px;
   }
 }
+
+/* Cross-product contrast guardrails */
+button[class*="bg-[#003d32]"],
+button[class*="bg-[#0b6b4f]"],
+button[class*="bg-[#e46f2e]"],
+a[class*="bg-[#003d32]"],
+a[class*="bg-[#0b6b4f]"],
+a[class*="bg-[#e46f2e]"] {
+  color: #ffffff !important;
+}
+button[class*="bg-[#003d32]"] svg,
+button[class*="bg-[#0b6b4f]"] svg,
+button[class*="bg-[#e46f2e]"] svg,
+a[class*="bg-[#003d32]"] svg,
+a[class*="bg-[#0b6b4f]"] svg,
+a[class*="bg-[#e46f2e]"] svg {
+  color: currentColor !important;
+}
+.text-slate-400 {
+  color: #5b6b67 !important;
+}
+.text-slate-500 {
+  color: #52635f !important;
+}
+.text-slate-600 {
+  color: #394a45 !important;
+}
+.text-slate-700 {
+  color: #263934 !important;
+}
+/* Keep disabled controls legible without making them look active. */
+button:disabled,
+[aria-disabled="true"] {
+  color: #52635f !important;
+  opacity: 0.72;
+}
+/* Preserve white labels on disabled dark controls while retaining disabled affordance. */
+button[class*="bg-[#003d32]"]:disabled,
+button[class*="bg-[#0b6b4f]"]:disabled,
+button[class*="bg-[#e46f2e]"]:disabled {
+  color: #ffffff !important;
+}
+
+/* Shared component contrast defaults */
+[data-slot="badge"] {
+  color: #173a31;
+}
+[data-slot="badge"][class*="bg-[#ddf8ec]"],
+[data-slot="badge"][class*="bg-[#d9f8ec]"],
+[data-slot="badge"][class*="bg-[#eaf7f1]"],
+[data-slot="badge"][class*="bg-[#e5f8ef]"],
+[data-slot="badge"][class*="bg-[#f1fbf6]"],
+[data-slot="badge"][class*="bg-[#f0fbf5]"] {
+  color: #075f3e !important;
+}
+[data-slot="tabs-list"] {
+  background: #e7efeb !important;
+  color: #31443e !important;
+}
+[data-slot="tabs-trigger"] {
+  color: #31443e !important;
+}
+[data-slot="tabs-trigger"][data-state="active"] {
+  background: #ffffff !important;
+  color: #0c2f25 !important;
+  box-shadow: 0 1px 3px rgba(12, 47, 37, 0.16);
+}
+input,
+select,
+textarea {
+  color: #13251f;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #64756f !important;
+  opacity: 1;
+}
+[data-slot="card"] {
+  color: #13251f;
+}
+[role="dialog"],
+[data-radix-dialog-content] {
+  color: #13251f;
+}
+@media (max-width: 640px) {
+  [data-slot="tabs-list"] {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  [data-slot="tabs-trigger"] {
+    min-height: 40px;
+  }
+  [role="dialog"],
+  [data-radix-dialog-content] {
+    max-width: calc(100vw - 24px);
+  }
+}

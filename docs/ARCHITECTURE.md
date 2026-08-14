@@ -49,3 +49,7 @@ QR Studio keeps the preview visible as a distinct section below the controls on 
 ## Analytics, event filtering, and creative customization
 
 The QR scan analytics view uses a responsive line chart for daily scan totals across the selected date range. QR Studio exposes foreground and background brand colours, font selection for the frame label, and local image or video creative preview. Event management provides live attendee search across name, email, phone, and ticket code, plus registered and checked-in filters, event font selection, and local creative preview. Creative files remain local until an authenticated storage workflow is connected, so they are not silently persisted.
+
+## Cross-product contrast system
+
+Konnekt now applies shared contrast guardrails to primary action buttons, muted labels, disabled controls, badges, tabs, form controls, cards, dialogs, and mobile overlay surfaces. Dark green and orange actions force white labels, muted text uses darker readable values, active tabs receive a white surface and dark label, and form placeholders remain visible on light backgrounds. The guardrails complement page-level styling across workspace overview, Analytics, QR Studio, Events, authentication states, empty states, and shared dialogs.
