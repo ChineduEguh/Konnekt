@@ -28,6 +28,7 @@ export const workspaces = mysqlTable("workspaces", {
   name: varchar("name", { length: 160 }).notNull(),
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   ownerId: int("ownerId").notNull(),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

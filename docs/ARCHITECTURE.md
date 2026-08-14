@@ -4,9 +4,9 @@ Konnekt is structured as a multi-tenant connection infrastructure workspace. The
 
 ## Implemented now
 
-The current milestone includes a responsive Konnekt command center, authenticated workspace initialization, role-bearing membership records, smart link creation, UTM fields, expiry metadata, password hash storage, device routing metadata, a dedicated `/r/:slug` redirect handler, event capture fields, workspace summary queries, campaign slug and UTM assistance, and provider-neutral payment, WhatsApp, notifications, and digest contracts.
+The current milestone includes a responsive Konnekt command center, authenticated workspace initialization, role-bearing membership records, centralized workspace authorization checks, smart link creation, UTM fields, expiry metadata, salted scrypt password hash storage, validated device, country, and browser routing metadata, a dedicated `/r/:slug` redirect handler, event capture fields, workspace summary queries, structured LLM-backed campaign slug, UTM, and analytics summary assistance with deterministic fallback, and provider-neutral payment, WhatsApp, notifications, and digest contracts.
 
-The redirect handler performs a direct database lookup, constructs the destination, appends UTM parameters, records a click event asynchronously, and redirects. The handler records a resolution duration in event metadata for later performance monitoring. The hard latency target remains an operational requirement that should be benchmarked against the production database and region before claiming compliance.
+The redirect handler performs a direct database lookup, enforces expiry, password, and device, country, and browser routing rules, constructs the destination, appends UTM parameters, records a click event asynchronously, enriches the event with country, device, browser, and UTM fields, and redirects. The handler records a resolution duration in event metadata for later performance monitoring. The hard latency target remains an operational requirement that should be benchmarked against the production database and region before claiming compliance.
 
 ## Deferred or provider-dependent
 
@@ -14,7 +14,7 @@ Payments intentionally remain deferred. `server/providers.ts` defines a `Payment
 
 WhatsApp is also provider-dependent. The current abstraction refuses to send when no official provider is configured. Official Meta Business API credentials and a CRM-linked conversation table are required before enabling outbound or inbound message persistence. Unofficial automation is out of scope.
 
-The weekly digest helper prepares a seven-day reporting window but is not scheduled yet. A production scheduler must call a handler under `/api/scheduled/`, authenticate cron requests, be idempotent, and only be scheduled after deployment and explicit operational setup.
+The weekly digest flow now exposes a cron-authenticated `POST /api/scheduled/weeklyDigest` callback. A workspace stores its Heartbeat task UID in `scheduleCronTaskUid`, and the protected `workspace.scheduleWeeklyDigest` mutation creates the six-field UTC Heartbeat job and persists that UID. The callback looks up the workspace by the authenticated cron task UID, compiles the current seven-day summary, returns an idempotent orphan response when the task has no owner, and reports structured diagnostics on failure. Delivery remains deferred until a notification or email provider is configured. The production job must only be activated after this checkpoint is deployed.
 
 ## Environment variables
 
@@ -22,11 +22,11 @@ The project uses the environment variables supplied by the managed full-stack ru
 
 ## Security notes
 
-Workspace procedures use authenticated sessions and validate membership before link creation. Slug input is constrained to a lowercase URL-safe format. Link passwords are never stored in plaintext and are represented by a SHA-256 digest in this milestone. Production hardening should migrate password verification to a memory-hard password hashing function before enabling password-protected links. Redirect destinations are parsed with the platform URL parser and only stored destinations are used.
+Workspace procedures use authenticated sessions and a centralized membership guard with owner, admin, and member role checks. Workspace-bound events, registrations, check-ins, analytics, QR assets, links, and summaries validate tenant ownership before reading or mutating records. Slug input is constrained to a lowercase URL-safe format, routing rules are restricted to supported keys, and destination URLs are parsed before storage. Link passwords are never stored in plaintext. They use salted scrypt hashes with constant-time verification support. Campaign assistance calls the server-side built-in LLM through structured JSON output and falls back to deterministic values if the model is unavailable. Redirect destinations are parsed with the platform URL parser and only stored destinations are used.
 
 ## Testing
 
-`pnpm lint` runs Prettier checks, `pnpm check` runs TypeScript validation, `pnpm test` runs Vitest, and `pnpm build` produces the client and server bundles. Current tests cover session logout, deferred providers, and digest window preparation. Additional integration coverage is still required for database-backed routing, permissions, events, QR flows, and CRM timelines.
+`pnpm lint` runs Prettier checks, `pnpm check` runs TypeScript validation, `pnpm test` runs Vitest, and `pnpm build` produces the client and server bundles. Current tests cover session logout, deferred providers, digest window preparation, salted password hashing, and routing-rule normalization. Additional database-backed integration coverage is still required for permissions, routing, events, QR flows, and CRM timelines.
 
 ## Event operations and QR Studio
 
@@ -42,7 +42,7 @@ The analytics page aggregates QR-origin scan events by day and provides date win
 
 ## Analytics and QR Studio usability
 
-The Analytics dashboard now provides a first-use empty state that points new workspaces toward creating a smart link or event. Its export controls, chart card, and empty-state actions use mobile-specific stacking and touch target sizing.
+The Analytics dashboard now provides a first-use empty state that points new workspaces toward creating a smart link or event. Its export controls, chart card, and empty-state actions use mobile-specific stacking and touch target sizing. The protected `analytics.summary` procedure supplies a factual, structured LLM summary of current workspace metrics and falls back to a deterministic sentence when the model is unavailable.
 
 QR Studio keeps the preview visible as a distinct section below the controls on phones. Uploaded logos are composited into the QR canvas before the preview and download data URL are updated. The preview identifies whether a centre logo is active and reports an actionable error if the selected image cannot be decoded.
 

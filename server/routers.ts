@@ -1,5 +1,5 @@
+import { parse as parseCookie } from "cookie";
 import { z } from "zod";
-import { createHash } from "node:crypto";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -14,7 +14,11 @@ import {
   findLinkBySlug,
   getOrCreateWorkspace,
   getWorkspaceLinks,
-  getWorkspaceMembership,
+  getEventWorkspaceId,
+  getRegistrationWorkspaceId,
+  getSmartLinkWorkspaceId,
+  requireWorkspaceRole,
+  setWorkspaceScheduleCronTaskUid,
   getWorkspaceSummary,
   getQrScanAnalytics,
   listEventRegistrations,
@@ -23,6 +27,20 @@ import {
   recordConnectionEvent,
   registerAttendee,
 } from "./db";
+import {
+  detectBrowser,
+  detectDevice,
+  hashPassword,
+  matchesRoutingRules,
+  normalizeRoutingRules,
+  verifyPassword,
+} from "./security";
+import {
+  generateCampaignUtm,
+  summarizeAnalytics,
+  suggestCampaignSlug,
+} from "./ai";
+import { createHeartbeatJob } from "./_core/heartbeat";
 
 const slugSchema = z
   .string()
@@ -55,11 +73,47 @@ export const appRouter = router({
     }),
   }),
   workspace: router({
-    current: protectedProcedure.query(async ({ ctx }) =>
-      getOrCreateWorkspace(ctx.user)
-    ),
+    current: protectedProcedure.query(async ({ ctx }) => {
+      const workspace = await getOrCreateWorkspace(ctx.user);
+      if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
+      return workspace;
+    }),
+    scheduleWeeklyDigest: protectedProcedure
+      .input(
+        z.object({
+          cron: z
+            .string()
+            .regex(
+              /^\d+ \d+ \d+ \S+ \S+ \S+$/,
+              "Use a six-field UTC cron expression"
+            )
+            .default("0 0 9 * * 1"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id, [
+          "owner",
+          "admin",
+        ]);
+        const sessionToken =
+          parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";
+        const job = await createHeartbeatJob(
+          {
+            name: `weekly-digest-${workspace.id}`,
+            cron: input.cron,
+            path: "/api/scheduled/weeklyDigest",
+            description: `Weekly analytics digest for ${workspace.name}`,
+          },
+          sessionToken
+        );
+        await setWorkspaceScheduleCronTaskUid(workspace.id, job.taskUid);
+        return { taskUid: job.taskUid, nextExecutionAt: job.nextExecutionAt };
+      }),
     summary: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await getOrCreateWorkspace(ctx.user);
+      if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
       return workspace
         ? getWorkspaceSummary(workspace.id)
         : {
@@ -76,6 +130,7 @@ export const appRouter = router({
   links: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await getOrCreateWorkspace(ctx.user);
+      if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
       return workspace ? getWorkspaceLinks(workspace.id) : [];
     }),
     create: protectedProcedure
@@ -95,15 +150,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const workspace = await getOrCreateWorkspace(ctx.user);
         if (!workspace) throw new Error("Workspace could not be initialized");
-        const membership = await getWorkspaceMembership(
-          workspace.id,
-          ctx.user.id
-        );
-        if (
-          !membership ||
-          !["owner", "admin", "member"].includes(membership.role)
-        )
-          throw new Error("Workspace access denied");
+        await requireWorkspaceRole(workspace.id, ctx.user.id);
         const { password, destinationUrl, customDomain, ...rest } = input;
         return createWorkspaceLink({
           ...rest,
@@ -113,9 +160,8 @@ export const appRouter = router({
               ?.replace(/^https?:\/\//i, "")
               .replace(/\/$/, "")
               .trim() || null,
-          passwordHash: password
-            ? createHash("sha256").update(password).digest("hex")
-            : null,
+          passwordHash: password ? hashPassword(password) : null,
+          routingRules: normalizeRoutingRules(input.routingRules),
           workspaceId: workspace.id,
           createdBy: ctx.user.id,
         });
@@ -123,21 +169,31 @@ export const appRouter = router({
   }),
   redirect: router({
     resolve: publicProcedure
-      .input(z.object({ slug: slugSchema }))
+      .input(
+        z.object({
+          slug: slugSchema,
+          password: z.string().max(120).optional(),
+        })
+      )
       .query(async ({ input, ctx }) => {
         const link = await findLinkBySlug(input.slug);
         if (!link) return { found: false as const };
         if (link.expiresAt && link.expiresAt.getTime() < Date.now())
           return { found: false as const, expired: true as const };
+        if (
+          link.passwordHash &&
+          (!input.password ||
+            !verifyPassword(input.password, link.passwordHash))
+        ) {
+          return { found: false as const, passwordRequired: true as const };
+        }
         const url = new URL(link.destinationUrl);
         const rules = (link.routingRules || {}) as Record<string, string>;
-        const userAgent = String(
-          ctx.req.headers["user-agent"] || ""
+        const userAgent = String(ctx.req.headers["user-agent"] || "");
+        const country = String(
+          ctx.req.headers["cf-ipcountry"] || ctx.req.headers["x-country"] || ""
         ).toLowerCase();
-        if (
-          rules.device === "mobile" &&
-          !/android|iphone|ipad|mobile/.test(userAgent)
-        )
+        if (!matchesRoutingRules(rules, userAgent, country))
           return { found: false as const, routingMiss: true as const };
         if (link.utmSource) url.searchParams.set("utm_source", link.utmSource);
         if (link.utmMedium) url.searchParams.set("utm_medium", link.utmMedium);
@@ -151,16 +207,9 @@ export const appRouter = router({
             String(ctx.req.headers["x-forwarded-for"] || "").split(",")[0] ||
             null,
           referrer: ctx.req.headers.referer || null,
-          deviceType: /android|iphone|ipad|mobile/.test(userAgent)
-            ? "mobile"
-            : "desktop",
-          browser: /chrome/.test(userAgent)
-            ? "chrome"
-            : /safari/.test(userAgent)
-              ? "safari"
-              : /firefox/.test(userAgent)
-                ? "firefox"
-                : "other",
+          country: country || null,
+          deviceType: detectDevice(userAgent),
+          browser: detectBrowser(userAgent),
           utmSource: link.utmSource,
           utmMedium: link.utmMedium,
           utmCampaign: link.utmCampaign,
@@ -172,6 +221,7 @@ export const appRouter = router({
   events: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await getOrCreateWorkspace(ctx.user);
+      if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
       return workspace ? listWorkspaceEvents(workspace.id) : [];
     }),
     create: protectedProcedure
@@ -188,6 +238,10 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const workspace = await getOrCreateWorkspace(ctx.user);
         if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id, [
+          "owner",
+          "admin",
+        ]);
         return createWorkspaceEvent({
           ...input,
           workspaceId: workspace.id,
@@ -196,7 +250,12 @@ export const appRouter = router({
       }),
     registrations: protectedProcedure
       .input(z.object({ eventId: z.number().int().positive() }))
-      .query(({ input }) => listEventRegistrations(input.eventId)),
+      .query(async ({ ctx, input }) => {
+        const workspaceId = await getEventWorkspaceId(input.eventId);
+        if (!workspaceId) throw new Error("Event not found");
+        await requireWorkspaceRole(workspaceId, ctx.user.id);
+        return listEventRegistrations(input.eventId);
+      }),
     register: publicProcedure
       .input(
         z.object({
@@ -214,9 +273,26 @@ export const appRouter = router({
       }),
     checkIn: protectedProcedure
       .input(z.object({ ticketCode: z.string().min(4).max(80) }))
-      .mutation(({ input }) => checkInRegistration(input.ticketCode)),
+      .mutation(async ({ ctx, input }) => {
+        const workspaceId = await getRegistrationWorkspaceId(input.ticketCode);
+        if (!workspaceId) throw new Error("Ticket not found");
+        await requireWorkspaceRole(workspaceId, ctx.user.id);
+        return checkInRegistration(input.ticketCode);
+      }),
   }),
   analytics: router({
+    summary: protectedProcedure.mutation(async ({ ctx }) => {
+      const workspace = await getOrCreateWorkspace(ctx.user);
+      if (!workspace) throw new Error("Workspace could not be initialized");
+      await requireWorkspaceRole(workspace.id, ctx.user.id);
+      const summary = await getWorkspaceSummary(workspace.id);
+      return summarizeAnalytics({
+        clicks: summary.clicks,
+        scans: summary.scans,
+        links: summary.links,
+        events: summary.events,
+      });
+    }),
     qrScans: protectedProcedure
       .input(
         z
@@ -225,6 +301,7 @@ export const appRouter = router({
       )
       .query(async ({ ctx, input }) => {
         const workspace = await getOrCreateWorkspace(ctx.user);
+        if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
         return workspace
           ? getQrScanAnalytics(workspace.id, input?.from, input?.to)
           : [];
@@ -233,6 +310,7 @@ export const appRouter = router({
   qr: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await getOrCreateWorkspace(ctx.user);
+      if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
       return workspace ? listWorkspaceQrCodes(workspace.id) : [];
     }),
     create: protectedProcedure
@@ -256,6 +334,16 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const workspace = await getOrCreateWorkspace(ctx.user);
         if (!workspace) throw new Error("Workspace could not be initialized");
+        const smartLinkWorkspaceId = await getSmartLinkWorkspaceId(
+          input.smartLinkId
+        );
+        if (smartLinkWorkspaceId !== workspace.id)
+          throw new Error("Smart link access denied");
+        await requireWorkspaceRole(workspace.id, ctx.user.id, [
+          "owner",
+          "admin",
+          "member",
+        ]);
         let logoUrl: string | null = null;
         if (input.logoDataUrl) {
           const match = input.logoDataUrl.match(
@@ -279,31 +367,10 @@ export const appRouter = router({
   ai: router({
     suggestSlug: protectedProcedure
       .input(z.object({ campaign: z.string().min(3).max(240) }))
-      .mutation(({ input }) => {
-        const suggestion = input.campaign
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .slice(0, 50);
-        return {
-          suggestion: suggestion || "new-campaign",
-          note: "Assistive suggestion only. Review before publishing.",
-        };
-      }),
+      .mutation(({ input }) => suggestCampaignSlug(input.campaign)),
     generateUtm: protectedProcedure
       .input(z.object({ campaign: z.string().min(3).max(240) }))
-      .mutation(({ input }) => {
-        const base = input.campaign
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .slice(0, 60);
-        return {
-          utmSource: "konnekt",
-          utmMedium: "campaign",
-          utmCampaign: base || "new-campaign",
-        };
-      }),
+      .mutation(({ input }) => generateCampaignUtm(input.campaign)),
   }),
 });
 

@@ -8,6 +8,13 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { findLinkBySlug, recordConnectionEvent } from "../db";
 import { createContext } from "./context";
+import {
+  detectBrowser,
+  detectDevice,
+  matchesRoutingRules,
+  verifyPassword,
+} from "../security";
+import { handleWeeklyDigest } from "../scheduled";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -54,6 +61,26 @@ async function startServer() {
       if (!isRedirectPath && !customHostMatches) return next();
       if (link.expiresAt && link.expiresAt.getTime() < Date.now())
         return res.status(410).json({ error: "connection-expired" });
+      if (
+        link.passwordHash &&
+        (!String(req.query.password || "") ||
+          !verifyPassword(String(req.query.password || ""), link.passwordHash))
+      ) {
+        return res.status(401).json({ error: "connection-password-required" });
+      }
+      const userAgent = String(req.headers["user-agent"] || "");
+      const country = String(
+        req.headers["cf-ipcountry"] || req.headers["x-country"] || ""
+      ).toLowerCase();
+      if (
+        !matchesRoutingRules(
+          link.routingRules as Record<string, string>,
+          userAgent,
+          country
+        )
+      ) {
+        return res.status(404).json({ error: "connection-routing-miss" });
+      }
       const destination = new URL(link.destinationUrl);
       if (link.utmSource)
         destination.searchParams.set("utm_source", link.utmSource);
@@ -68,6 +95,15 @@ async function startServer() {
         ipAddress:
           String(req.headers["x-forwarded-for"] || "").split(",")[0] || null,
         referrer: req.headers.referer || null,
+        country:
+          String(
+            req.headers["cf-ipcountry"] || req.headers["x-country"] || ""
+          ) || null,
+        deviceType: detectDevice(String(req.headers["user-agent"] || "")),
+        browser: detectBrowser(String(req.headers["user-agent"] || "")),
+        utmSource: link.utmSource,
+        utmMedium: link.utmMedium,
+        utmCampaign: link.utmCampaign,
         metadata: {
           userAgent: req.headers["user-agent"] || null,
           resolutionMs: Number((performance.now() - startedAt).toFixed(2)),
@@ -78,6 +114,7 @@ async function startServer() {
       return res.status(500).json({ error: "connection-resolution-failed" });
     }
   });
+  app.post("/api/scheduled/weeklyDigest", handleWeeklyDigest);
   // tRPC API
   app.use(
     "/api/trpc",

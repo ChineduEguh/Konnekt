@@ -15,6 +15,7 @@ import {
   workspaces,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { isWorkspaceRoleAllowed } from "./security";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -119,6 +120,79 @@ export async function getWorkspaceMembership(
     )
     .limit(1);
   return rows[0];
+}
+
+export async function requireWorkspaceRole(
+  workspaceId: number,
+  userId: number,
+  allowedRoles: Array<"owner" | "admin" | "member"> = [
+    "owner",
+    "admin",
+    "member",
+  ]
+) {
+  const membership = await getWorkspaceMembership(workspaceId, userId);
+  if (!isWorkspaceRoleAllowed(membership?.role, allowedRoles)) {
+    throw new Error("Workspace access denied");
+  }
+  return membership;
+}
+
+export async function setWorkspaceScheduleCronTaskUid(
+  workspaceId: number,
+  taskUid: string
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(workspaces)
+    .set({ scheduleCronTaskUid: taskUid })
+    .where(eq(workspaces.id, workspaceId));
+}
+
+export async function getWorkspaceByScheduleCronTaskUid(taskUid: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.scheduleCronTaskUid, taskUid))
+    .limit(1);
+  return rows[0];
+}
+
+export async function getSmartLinkWorkspaceId(smartLinkId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select({ workspaceId: smartLinks.workspaceId })
+    .from(smartLinks)
+    .where(eq(smartLinks.id, smartLinkId))
+    .limit(1);
+  return rows[0]?.workspaceId;
+}
+
+export async function getEventWorkspaceId(eventId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select({ workspaceId: events.workspaceId })
+    .from(events)
+    .where(eq(events.id, eventId))
+    .limit(1);
+  return rows[0]?.workspaceId;
+}
+
+export async function getRegistrationWorkspaceId(ticketCode: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select({ workspaceId: events.workspaceId })
+    .from(eventRegistrations)
+    .innerJoin(events, eq(eventRegistrations.eventId, events.id))
+    .where(eq(eventRegistrations.ticketCode, ticketCode))
+    .limit(1);
+  return rows[0]?.workspaceId;
 }
 
 export async function getWorkspaceLinks(workspaceId: number) {
