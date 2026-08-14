@@ -5,6 +5,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { createTicketCode } from "./eventHelpers";
+import { storagePut } from "./storage";
 import {
   checkInRegistration,
   createQrCode,
@@ -15,6 +16,7 @@ import {
   getWorkspaceLinks,
   getWorkspaceMembership,
   getWorkspaceSummary,
+  getQrScanAnalytics,
   listEventRegistrations,
   listWorkspaceEvents,
   listWorkspaceQrCodes,
@@ -196,6 +198,20 @@ export const appRouter = router({
       .input(z.object({ ticketCode: z.string().min(4).max(80) }))
       .mutation(({ input }) => checkInRegistration(input.ticketCode)),
   }),
+  analytics: router({
+    qrScans: protectedProcedure
+      .input(
+        z
+          .object({ from: z.date().optional(), to: z.date().optional() })
+          .optional()
+      )
+      .query(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        return workspace
+          ? getQrScanAnalytics(workspace.id, input?.from, input?.to)
+          : [];
+      }),
+  }),
   qr: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await getOrCreateWorkspace(ctx.user);
@@ -216,12 +232,30 @@ export const appRouter = router({
             .default("#DDF8EC"),
           shape: z.enum(["square", "dots", "rounded"]).default("rounded"),
           frameLabel: z.string().max(80).optional(),
+          logoDataUrl: z.string().max(2_000_000).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         const workspace = await getOrCreateWorkspace(ctx.user);
         if (!workspace) throw new Error("Workspace could not be initialized");
-        return createQrCode({ ...input, workspaceId: workspace.id });
+        let logoUrl: string | null = null;
+        if (input.logoDataUrl) {
+          const match = input.logoDataUrl.match(
+            /^data:(image\/(?:png|jpeg|jpg|webp));base64,(.+)$/
+          );
+          if (!match)
+            throw new Error("Logo must be a PNG, JPEG, or WebP image");
+          const contentType =
+            match[1] === "image/jpg" ? "image/jpeg" : match[1];
+          const uploaded = await storagePut(
+            `workspaces/${workspace.id}/qr-logos/logo`,
+            Buffer.from(match[2], "base64"),
+            contentType
+          );
+          logoUrl = uploaded.url;
+        }
+        const { logoDataUrl: _logoDataUrl, ...qrInput } = input;
+        return createQrCode({ ...qrInput, logoUrl, workspaceId: workspace.id });
       }),
   }),
   ai: router({

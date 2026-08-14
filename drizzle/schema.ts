@@ -183,6 +183,7 @@ export const qrCodes = mysqlTable("qrCodes", {
     .default("rounded")
     .notNull(),
   frameLabel: varchar("frameLabel", { length: 80 }),
+  logoUrl: text("logoUrl"),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

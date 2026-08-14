@@ -315,6 +315,12 @@ export default function Home() {
             <h1>Good morning, {user?.name?.split(" ")[0] || "there"}.</h1>
           </div>
           <div className="header-actions">
+            <a
+              href="/analytics"
+              className="hidden rounded-full border border-[#b7dfcf] bg-white px-4 py-2 text-sm font-semibold text-[#0b6b4f] transition hover:bg-[#f1fbf6] sm:inline-flex"
+            >
+              Analytics
+            </a>
             <Badge
               variant="outline"
               className="hidden rounded-full border-[#b7dfcf] bg-[#f1fbf6] px-3 py-1 text-[#087443] sm:flex"

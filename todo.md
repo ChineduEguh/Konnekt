@@ -44,3 +44,9 @@
 - [x] Add QR scan analytics linked to smart links and workspaces
 - [x] Add tests for registration, check-in, QR creation, and duplicate protection
 - [x] Update event and QR documentation, commit to GitHub, and verify the linked Vercel deployment
+- [x] Add custom logo upload and centered logo embedding in QR Studio previews and saved assets
+- [x] Add QR scan analytics dashboard with time-series statistics and date range controls
+- [ ] Add direct one-click QR scan exports to a Google Sheet through an authenticated Sheets API integration
+- [x] Add attendee CSV export to event management
+- [x] Add tests and documentation for QR logo, analytics, and export workflows
+- [ ] Commit the analytics and export milestone to GitHub and update the linked Vercel project

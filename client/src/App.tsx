@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import QrStudio from "./pages/QrStudio";
+import Analytics from "./pages/Analytics";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/events" component={Events} />
       <Route path="/qr-studio" component={QrStudio} />
+      <Route path="/analytics" component={Analytics} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

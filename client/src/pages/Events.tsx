@@ -77,6 +77,35 @@ export default function Events() {
           : e.message
       ),
   });
+  function downloadAttendees() {
+    const rows = registrations.data || [];
+    const escape = (value: unknown) =>
+      `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const csv = [
+      "name,email,phone,ticket_code,status,registered_at,checked_in_at",
+      ...rows.map(row =>
+        [
+          row.attendeeName,
+          row.attendeeEmail,
+          row.attendeePhone,
+          row.ticketCode,
+          row.status,
+          row.registeredAt,
+          row.checkedInAt,
+        ]
+          .map(escape)
+          .join(",")
+      ),
+    ].join("\\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" })
+    );
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `konnekt-attendees-${selectedEvent}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
   const checkIn = trpc.events.checkIn.useMutation({
     onSuccess: result => {
       registrations.refetch();
@@ -362,6 +391,15 @@ export default function Events() {
                   <Badge variant="outline" className="ml-1 rounded-full">
                     {registrations.data?.length || 0}
                   </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-auto rounded-full"
+                    disabled={!registrations.data?.length}
+                    onClick={downloadAttendees}
+                  >
+                    <Download size={14} /> Export CSV
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>

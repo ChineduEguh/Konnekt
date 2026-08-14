@@ -29,6 +29,7 @@ export default function QrStudio() {
   const [backgroundColor, setBackgroundColor] = useState("#DDF8EC");
   const [shape, setShape] = useState<"square" | "dots" | "rounded">("rounded");
   const [frameLabel, setFrameLabel] = useState("SCAN TO CONNECT");
+  const [logoDataUrl, setLogoDataUrl] = useState("");
   const [preview, setPreview] = useState("");
   const workspace = trpc.workspace.current.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -45,13 +46,33 @@ export default function QrStudio() {
     ? `${window.location.origin}/r/${selected.slug}?source=qr`
     : "https://konnekt.af/connect?source=qr";
   useEffect(() => {
-    QRCode.toDataURL(target, {
-      width: 720,
-      margin: 2,
-      color: { dark: foregroundColor, light: backgroundColor },
-      errorCorrectionLevel: "H",
-    }).then(setPreview);
-  }, [target, foregroundColor, backgroundColor, shape]);
+    const render = async () => {
+      const canvas = document.createElement("canvas");
+      await QRCode.toCanvas(canvas, target, {
+        width: 720,
+        margin: 2,
+        color: { dark: foregroundColor, light: backgroundColor },
+        errorCorrectionLevel: "H",
+      });
+      if (!logoDataUrl) return setPreview(canvas.toDataURL("image/png"));
+      const image = new Image();
+      image.onload = () => {
+        const context = canvas.getContext("2d");
+        if (!context) return setPreview(canvas.toDataURL("image/png"));
+        const size = 132;
+        const x = (canvas.width - size) / 2;
+        const y = (canvas.height - size) / 2;
+        context.fillStyle = backgroundColor;
+        context.beginPath();
+        context.roundRect(x - 12, y - 12, size + 24, size + 24, 18);
+        context.fill();
+        context.drawImage(image, x, y, size, size);
+        setPreview(canvas.toDataURL("image/png"));
+      };
+      image.src = logoDataUrl;
+    };
+    void render();
+  }, [target, foregroundColor, backgroundColor, shape, logoDataUrl]);
   if (loading)
     return (
       <div className="min-h-screen grid place-items-center bg-[#f5f7f9]">
@@ -166,6 +187,28 @@ export default function QrStudio() {
                 </select>
               </label>
               <label className="block text-xs font-semibold text-slate-600">
+                Centre logo
+                <Input
+                  className="mt-1"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 1024 * 1024)
+                      return toast.error("Logo must be smaller than 1 MB");
+                    const reader = new FileReader();
+                    reader.onload = () =>
+                      setLogoDataUrl(String(reader.result || ""));
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <span className="mt-1 block text-[11px] font-normal text-slate-400">
+                  PNG, JPEG, or WebP. The logo is placed in a
+                  high-error-correction centre panel.
+                </span>
+              </label>
+              <label className="block text-xs font-semibold text-slate-600">
                 Frame label
                 <Input
                   className="mt-1"
@@ -186,6 +229,7 @@ export default function QrStudio() {
                       backgroundColor,
                       shape,
                       frameLabel,
+                      logoDataUrl: logoDataUrl || undefined,
                     })
                   }
                 >
