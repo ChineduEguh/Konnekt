@@ -31,7 +31,7 @@
 - [x] Implement role-based workspace authorization checks and admin or owner-gated procedures
 - [x] Add password hashing, password validation, and routing rule input and enforcement for smart links
 - [x] Populate country, device, browser, and UTM fields during redirect event capture
-- [ ] Add payment tables and document idempotency and webhook persistence design in code or docs
+- [x] Add payment tables and document idempotency and webhook persistence design in code or docs
 - [ ] Implement CRM-linked WhatsApp conversation storage and contact association
 - [x] Replace deterministic campaign helpers with real LLM-backed workflows or clearly mark them partial
 - [ ] Add a real weekly digest scheduler and delivery handler under /api/scheduled/

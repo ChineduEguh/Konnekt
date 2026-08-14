@@ -10,7 +10,7 @@ The redirect handler performs a direct database lookup, enforces expiry, passwor
 
 ## Deferred or provider-dependent
 
-Payments intentionally remain deferred. `server/providers.ts` defines a `PaymentProvider` contract and a safe deferred implementation, but no gateway credentials, checkout flow, webhook verification, or payment tables are active. A future provider must add idempotency keys, verified signatures, durable provider references, and an audit trail without storing raw card data.
+Payments intentionally remain deferred. `server/providers.ts` defines a `PaymentProvider` contract and a safe deferred implementation. The database now includes `payments` with workspace-scoped idempotency keys, provider references, status, amounts, currency, and metadata, plus `paymentWebhookEvents` with provider event deduplication, payload hashes, and processing timestamps. A future gateway must add verified signatures, checkout orchestration, and an audit trail without storing raw card data.
 
 WhatsApp is provider-dependent. The current `WhatsAppProvider` abstraction refuses delivery when no official provider is configured. CRM-linked `whatsappConversations` and `whatsappMessages` tables now persist tenant-scoped message timelines, provider IDs, direction, and explicit delivery states. Outbound records remain `deferred` until official Meta Business API credentials and delivery handling are configured. Unofficial automation is out of scope.
 

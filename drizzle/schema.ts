@@ -217,6 +217,50 @@ export const whatsappConversations = mysqlTable(
     ).on(table.workspaceId, table.contactId),
   })
 );
+export const payments = mysqlTable(
+  "payments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    workspaceId: int("workspaceId").notNull(),
+    provider: varchar("provider", { length: 80 }).notNull(),
+    providerReference: varchar("providerReference", { length: 180 }),
+    idempotencyKey: varchar("idempotencyKey", { length: 180 }).notNull(),
+    amountMinor: int("amountMinor").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    status: mysqlEnum("status", ["pending", "succeeded", "failed", "refunded"])
+      .default("pending")
+      .notNull(),
+    metadata: json("metadata"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    idempotencyUnique: uniqueIndex("payment_workspace_idempotency_unique").on(
+      table.workspaceId,
+      table.idempotencyKey
+    ),
+    providerReferenceIdx: index("payment_provider_reference_idx").on(
+      table.provider,
+      table.providerReference
+    ),
+  })
+);
+export const paymentWebhookEvents = mysqlTable(
+  "paymentWebhookEvents",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    provider: varchar("provider", { length: 80 }).notNull(),
+    providerEventId: varchar("providerEventId", { length: 180 }).notNull(),
+    payloadHash: varchar("payloadHash", { length: 128 }).notNull(),
+    processedAt: timestamp("processedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    providerEventUnique: uniqueIndex(
+      "payment_webhook_provider_event_unique"
+    ).on(table.provider, table.providerEventId),
+  })
+);
 export const whatsappMessages = mysqlTable(
   "whatsappMessages",
   {
