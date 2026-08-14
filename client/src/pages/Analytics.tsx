@@ -100,7 +100,7 @@ export default function Analytics() {
               Sheets in one click.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="analytics-actions flex flex-wrap gap-2">
             <select
               className="h-10 rounded-full border border-slate-200 bg-white px-4 text-sm"
               value={range}
@@ -118,7 +118,7 @@ export default function Analytics() {
               <Download size={15} /> CSV
             </Button>
             <Button
-              className="rounded-full bg-[#003d32] hover:bg-[#0b6b4f]"
+              className="rounded-full bg-[#003d32] text-white hover:bg-[#0b6b4f]"
               onClick={exportToGoogleSheets}
             >
               <FileSpreadsheet size={15} /> Google Sheets
@@ -221,15 +221,34 @@ export default function Analytics() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="grid h-full place-items-center rounded-2xl bg-[#f4faf7] text-center text-slate-500">
-                  <div>
-                    <QrCode className="mx-auto mb-3 text-[#0b6b4f]" />
-                    <p className="text-sm font-semibold text-[#003d32]">
-                      No QR scans in this period
+                <div className="analytics-empty grid h-full place-items-center rounded-2xl bg-[#f4faf7] px-5 py-8 text-center text-slate-500">
+                  <div className="max-w-md">
+                    <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-white text-[#0b6b4f] shadow-sm">
+                      <QrCode size={25} />
+                    </span>
+                    <p className="text-base font-semibold text-[#003d32]">
+                      Your first signal starts with one smart link.
                     </p>
-                    <p className="mt-1 text-xs">
-                      Publish a QR asset and the trend will appear here.
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Create a link for your next campaign or publish an event.
+                      Once people scan your QR code, the trend will build here
+                      automatically.
                     </p>
+                    <div className="mt-5 flex flex-wrap justify-center gap-2">
+                      <Link href="/">
+                        <Button className="rounded-full bg-[#0b6b4f] text-white hover:bg-[#095a43]">
+                          <ExternalLink size={15} /> Create a smart link
+                        </Button>
+                      </Link>
+                      <Link href="/events">
+                        <Button
+                          variant="outline"
+                          className="rounded-full border-[#b7dfcf] bg-white text-[#245247]"
+                        >
+                          <CalendarRange size={15} /> Create an event
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )}

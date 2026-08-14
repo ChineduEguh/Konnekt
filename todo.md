@@ -52,3 +52,8 @@
 - [x] Commit the analytics and export milestone to GitHub and attempt the linked Vercel project update
 - [x] Fix public landing page mobile readability, contrast, spacing, browser-safe viewport behavior, and first-action clarity based on user screenshot
 - [x] Verify landing page at phone and desktop widths and checkpoint the usability fix
+- [x] Add a friendly Analytics empty state with clear calls to create a smart link or event
+- [x] Optimize Analytics dashboard mobile layout and touch targets
+- [x] Optimize QR Studio mobile layout and touch targets
+- [x] Verify QR Studio live preview accurately reflects uploaded custom logos before save and download
+- [ ] Validate, document, checkpoint, commit to GitHub, and attempt the linked Vercel update for this UX milestone

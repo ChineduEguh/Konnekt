@@ -30,6 +30,7 @@ export default function QrStudio() {
   const [shape, setShape] = useState<"square" | "dots" | "rounded">("rounded");
   const [frameLabel, setFrameLabel] = useState("SCAN TO CONNECT");
   const [logoDataUrl, setLogoDataUrl] = useState("");
+  const [logoName, setLogoName] = useState("");
   const [preview, setPreview] = useState("");
   const workspace = trpc.workspace.current.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -56,6 +57,14 @@ export default function QrStudio() {
       });
       if (!logoDataUrl) return setPreview(canvas.toDataURL("image/png"));
       const image = new Image();
+      image.onerror = () => {
+        setLogoDataUrl("");
+        setLogoName("");
+        toast.error(
+          "That logo could not be previewed. Please choose another image."
+        );
+        setPreview(canvas.toDataURL("image/png"));
+      };
       image.onload = () => {
         const context = canvas.getContext("2d");
         if (!context) return setPreview(canvas.toDataURL("image/png"));
@@ -97,9 +106,9 @@ export default function QrStudio() {
     anchor.click();
   }
   return (
-    <div className="min-h-screen bg-[#f5f7f9] p-5 text-slate-900 md:p-10">
+    <div className="qr-studio-shell min-h-screen bg-[#f5f7f9] p-5 text-slate-900 md:p-10">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="qr-studio-header mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <Link href="/">
               <Button
@@ -122,8 +131,8 @@ export default function QrStudio() {
             <Sparkles size={14} className="mr-1" /> Dynamic connection asset
           </Badge>
         </div>
-        <div className="grid gap-5 lg:grid-cols-[1fr_.9fr]">
-          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+        <div className="qr-studio-grid grid gap-5 lg:grid-cols-[1fr_.9fr]">
+          <Card className="qr-studio-controls rounded-2xl border-[#dfe9e4] shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#003d32]">
                 <Palette size={18} /> QR design controls
@@ -198,8 +207,10 @@ export default function QrStudio() {
                     if (file.size > 1024 * 1024)
                       return toast.error("Logo must be smaller than 1 MB");
                     const reader = new FileReader();
-                    reader.onload = () =>
+                    reader.onload = () => {
+                      setLogoName(file.name);
                       setLogoDataUrl(String(reader.result || ""));
+                    };
                     reader.readAsDataURL(file);
                   }}
                 />
@@ -220,7 +231,7 @@ export default function QrStudio() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   disabled={!linkId || createQr.isPending}
-                  className="rounded-full bg-[#003d32] hover:bg-[#0b6b4f]"
+                  className="rounded-full bg-[#003d32] text-white hover:bg-[#0b6b4f]"
                   onClick={() =>
                     createQr.mutate({
                       smartLinkId: linkId!,
@@ -246,7 +257,7 @@ export default function QrStudio() {
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+          <Card className="qr-studio-preview-card qr-studio-preview rounded-2xl border-[#dfe9e4] shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#003d32]">
                 <QrCode size={18} /> Live preview
@@ -271,7 +282,19 @@ export default function QrStudio() {
                   </div>
                 </div>
               </div>
-              <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                {logoDataUrl ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#e5f8ef] px-2.5 py-1 font-semibold text-[#087443]">
+                    Logo previewed
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1">
+                    No centre logo
+                  </span>
+                )}
+                {logoName ? (
+                  <span className="max-w-[220px] truncate">{logoName}</span>
+                ) : null}
                 <Link2 size={14} />
                 {selected
                   ? `Linked to knkt.af/${selected.slug}`
