@@ -288,9 +288,7 @@ export default function Home() {
         <div className="sidebar-bottom">
           <button
             className="nav-item"
-            onClick={() =>
-              toast.info("Settings are available as the workspace grows")
-            }
+            onClick={() => (window.location.href = "/settings")}
           >
             <Settings2 size={17} />
             <span>Workspace settings</span>

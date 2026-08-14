@@ -9,6 +9,7 @@ import Events from "./pages/Events";
 import QrStudio from "./pages/QrStudio";
 import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
+import Settings from "./pages/Settings";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/qr-studio" component={QrStudio} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/customers" component={Customers} />
+      <Route path="/settings" component={Settings} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

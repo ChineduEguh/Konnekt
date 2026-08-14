@@ -106,3 +106,7 @@
 - [x] Add tests, responsive verification, documentation, checkpoint, and GitHub or managed deployment synchronization for this enhancement
 - [x] Keep Google Sheets export as clipboard-based TSV copy and document authenticated Sheets API export as a future provider-dependent roadmap item
 - [x] Update README with current export behavior and next steps, then synchronize GitHub and managed deployment
+- [x] Add a future Google Sheets authenticated export settings placeholder and preparation toggle
+- [x] Add clipboard TSV export success feedback, copied-data preview modal, and clipboard failure fallback
+- [x] Add current smart link and QR scan activity metrics to the Analytics dashboard
+- [x] Add tests, responsive verification, documentation, GitHub synchronization, and managed deployment checkpoint for this enhancement

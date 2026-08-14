@@ -12,6 +12,8 @@ import {
   FileSpreadsheet,
   QrCode,
   ScanLine,
+  Eye,
+  X,
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -45,6 +47,10 @@ export default function Analytics() {
     { from, to },
     { enabled: isAuthenticated }
   );
+  const workspaceSummary = trpc.workspace.summary.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const [previewOpen, setPreviewOpen] = useState(false);
   const rows = (query.data || []).map(row => ({
     day: String(row.day),
     scans: Number(row.scans),
@@ -62,13 +68,23 @@ export default function Analytics() {
     URL.revokeObjectURL(url);
   }
   async function exportToGoogleSheets() {
-    await navigator.clipboard.writeText(scansToTsv(rows));
+    const tsv = scansToTsv(rows);
+    setPreviewOpen(true);
+    try {
+      await navigator.clipboard.writeText(tsv);
+      toast.success(
+        "Analytics copied to your clipboard. Preview it before pasting."
+      );
+    } catch {
+      toast.error(
+        "Clipboard access was unavailable. Use the preview to copy the data manually."
+      );
+    }
     window.open(
       "https://docs.google.com/spreadsheets/create",
       "_blank",
       "noopener,noreferrer"
     );
-    toast.success("Analytics copied. Paste into the new Google Sheet.");
   }
   if (loading)
     return (
@@ -264,6 +280,56 @@ export default function Analytics() {
             </div>
           </CardContent>
         </Card>
+        <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardContent className="p-5">
+              <p className="eyebrow">SMART LINKS</p>
+              <strong className="mt-3 block font-[Space_Grotesk] text-3xl text-[#003d32]">
+                {Number(workspaceSummary.data?.links ?? 0).toLocaleString()}
+              </strong>
+              <p className="mt-2 text-xs text-slate-500">
+                Active destinations in this workspace
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardContent className="p-5">
+              <p className="eyebrow">QR SCANS</p>
+              <strong className="mt-3 block font-[Space_Grotesk] text-3xl text-[#003d32]">
+                {Number(workspaceSummary.data?.scans ?? 0).toLocaleString()}
+              </strong>
+              <p className="mt-2 text-xs text-slate-500">
+                All-time QR-origin activity
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardContent className="p-5">
+              <p className="eyebrow">LINK CLICKS</p>
+              <strong className="mt-3 block font-[Space_Grotesk] text-3xl text-[#003d32]">
+                {Number(workspaceSummary.data?.clicks ?? 0).toLocaleString()}
+              </strong>
+              <p className="mt-2 text-xs text-slate-500">
+                All-time smart-link activity
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardContent className="p-5">
+              <p className="eyebrow">EXPORT PREVIEW</p>
+              <Button
+                variant="outline"
+                className="mt-3 rounded-full"
+                onClick={() => setPreviewOpen(true)}
+              >
+                <Eye size={15} /> Review copied data
+              </Button>
+              <p className="mt-2 text-xs text-slate-500">
+                Inspect TSV rows before pasting
+              </p>
+            </CardContent>
+          </Card>
+        </section>
         <div className="mt-5 grid gap-5 xl:grid-cols-2">
           <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
             <CardHeader>
@@ -405,6 +471,52 @@ export default function Analytics() {
             </button>
           </CardContent>
         </Card>
+        {previewOpen && (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="export-preview-title"
+          >
+            <div className="w-full max-w-2xl rounded-2xl border border-[#dfe9e4] bg-white p-5 text-slate-900 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="eyebrow">CLIPBOARD EXPORT</p>
+                  <h2
+                    id="export-preview-title"
+                    className="mt-1 text-xl font-semibold text-[#003d32]"
+                  >
+                    Copied scan data preview
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    This preview mirrors the TSV content copied for Google
+                    Sheets.
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close export preview"
+                  onClick={() => setPreviewOpen(false)}
+                >
+                  <X size={17} />
+                </Button>
+              </div>
+              <pre className="mt-5 max-h-80 overflow-auto rounded-xl bg-[#f4faf7] p-4 text-xs leading-6 text-[#245247]">
+                {scansToTsv(rows) ||
+                  "day\tscans\nNo scan activity in this range"}
+              </pre>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  className="rounded-full bg-[#003d32] text-white hover:bg-[#0b6b4f]"
+                  onClick={() => setPreviewOpen(false)}
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

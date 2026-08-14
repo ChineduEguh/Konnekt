@@ -12,9 +12,9 @@ Events support registration, ticket codes, capacity controls, attendee search, s
 
 ## Google Sheets export scope
 
-The current Google Sheets action copies tab-separated scan data to the clipboard and opens a new Google Sheet. Users paste the copied data into the sheet. This approach requires no application-held Google credential and remains the supported export path for the current release.
+The current Google Sheets action copies tab-separated scan data to the clipboard, shows a copied-data preview modal, reports a success toast, and opens a new Google Sheet. Users paste the copied data into the sheet. This approach requires no application-held Google credential and remains the supported export path for the current release. Analytics also displays current smart-link count, all-time link clicks, and all-time QR scan activity.
 
-An authenticated one-click Google Sheets API integration is intentionally deferred. It will require a secure Google OAuth or service-account integration, explicit spreadsheet creation and write permissions, secret management, and production verification. It remains a future provider-dependent roadmap item rather than an active feature.
+An authenticated one-click Google Sheets API integration is intentionally deferred. Workspace Settings now includes a persistent preparation toggle and clearly indicates that credentials are not connected. The toggle does not change the current clipboard workflow. The future integration will require secure Google OAuth or service-account access, explicit spreadsheet creation and write permissions, secret management, and production verification. It remains a future provider-dependent roadmap item rather than an active feature.
 
 ## Local development
 
