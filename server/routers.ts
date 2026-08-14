@@ -15,6 +15,7 @@ import {
   findLinkBySlug,
   getOrCreateWorkspace,
   getWorkspaceLinks,
+  getContactTimeline,
   getContactWorkspaceId,
   listWorkspaceContacts,
   getEventWorkspaceId,
@@ -289,6 +290,14 @@ export const appRouter = router({
       }),
   }),
   contacts: router({
+    timeline: protectedProcedure
+      .input(z.object({ contactId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id);
+        return getContactTimeline(input.contactId, workspace.id);
+      }),
     list: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await getOrCreateWorkspace(ctx.user);
       if (!workspace) throw new Error("Workspace could not be initialized");

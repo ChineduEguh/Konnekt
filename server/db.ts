@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -175,6 +175,85 @@ export async function createWorkspaceContact(
     .where(eq(contacts.id, Number(inserted[0].insertId)))
     .limit(1);
   return rows[0];
+}
+
+export async function getContactTimeline(
+  contactId: number,
+  workspaceId: number
+) {
+  const db = await getDb();
+  if (!db) return [];
+  const contactRows = await db
+    .select({ email: contacts.email, phone: contacts.phone })
+    .from(contacts)
+    .where(
+      and(eq(contacts.id, contactId), eq(contacts.workspaceId, workspaceId))
+    )
+    .limit(1);
+  const contact = contactRows[0];
+  if (!contact) return [];
+  const [conversationRows, registrations] = await Promise.all([
+    db
+      .select({ conversationId: whatsappConversations.id })
+      .from(whatsappConversations)
+      .where(
+        and(
+          eq(whatsappConversations.contactId, contactId),
+          eq(whatsappConversations.workspaceId, workspaceId)
+        )
+      ),
+    db
+      .select({
+        id: eventRegistrations.id,
+        occurredAt: eventRegistrations.registeredAt,
+        title: events.title,
+        status: eventRegistrations.status,
+        attendeeEmail: eventRegistrations.attendeeEmail,
+      })
+      .from(eventRegistrations)
+      .innerJoin(events, eq(eventRegistrations.eventId, events.id))
+      .where(
+        and(
+          eq(eventRegistrations.workspaceId, workspaceId),
+          or(
+            contact.email
+              ? eq(eventRegistrations.attendeeEmail, contact.email)
+              : undefined,
+            contact.phone
+              ? eq(eventRegistrations.attendeePhone, contact.phone)
+              : undefined
+          )
+        )
+      )
+      .orderBy(desc(eventRegistrations.registeredAt)),
+  ]);
+  const messages = conversationRows.length
+    ? await listWhatsappMessages(conversationRows[0].conversationId)
+    : [];
+  return [
+    ...messages.map(message => ({
+      id: `message-${message.id}`,
+      occurredAt: message.createdAt,
+      type: "conversation" as const,
+      title:
+        message.direction === "inbound"
+          ? "Inbound WhatsApp message"
+          : "Outbound WhatsApp message",
+      detail: message.body,
+      status: message.deliveryStatus,
+    })),
+    ...registrations.map(registration => ({
+      id: `registration-${registration.id}`,
+      occurredAt: registration.occurredAt,
+      type: "event" as const,
+      title: `Event registration: ${registration.title}`,
+      detail: registration.attendeeEmail,
+      status: registration.status,
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+  );
 }
 
 export async function getContactWorkspaceId(contactId: number) {

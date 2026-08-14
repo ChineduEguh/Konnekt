@@ -19,7 +19,7 @@ export default function Customers() {
   const contacts = trpc.contacts.list.useQuery(undefined, {
     enabled: isAuthenticated,
   });
-  const timeline = trpc.conversations.timeline.useQuery(
+  const timeline = trpc.contacts.timeline.useQuery(
     { contactId: selectedId ?? 0 },
     { enabled: Boolean(selectedId) && isAuthenticated }
   );
@@ -164,7 +164,7 @@ export default function Customers() {
             <CardContent className="space-y-3">
               {!selectedId ? (
                 <p className="text-sm text-muted-foreground">
-                  Select a contact to view recorded WhatsApp activity.
+                  Select a contact to view recorded CRM activity.
                 </p>
               ) : null}
               {selectedId && timeline.isLoading ? (
@@ -174,18 +174,19 @@ export default function Customers() {
               ) : null}
               {selectedId && !timeline.isLoading && !timeline.data?.length ? (
                 <p className="text-sm text-muted-foreground">
-                  No conversation activity recorded yet.
+                  No activity recorded yet.
                 </p>
               ) : null}
-              {timeline.data?.map(message => (
-                <div key={message.id} className="rounded-lg bg-muted/50 p-3">
+              {timeline.data?.map(activity => (
+                <div key={activity.id} className="rounded-lg bg-muted/50 p-3">
                   <div className="flex justify-between gap-3 text-xs text-muted-foreground">
-                    <span>
-                      {message.direction === "inbound" ? "Inbound" : "Outbound"}
-                    </span>
-                    <span>{message.deliveryStatus}</span>
+                    <span>{activity.type}</span>
+                    <span>{activity.status}</span>
                   </div>
-                  <p className="mt-1 text-sm">{message.body}</p>
+                  <p className="mt-1 text-sm font-medium">{activity.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {activity.detail}
+                  </p>
                 </div>
               ))}
             </CardContent>
