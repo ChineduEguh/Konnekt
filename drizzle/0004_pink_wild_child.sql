@@ -1,0 +1,1 @@
+ALTER TABLE `smartLinks` ADD `customDomain` varchar(255);

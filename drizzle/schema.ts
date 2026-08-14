@@ -58,6 +58,7 @@ export const smartLinks = mysqlTable(
     workspaceId: int("workspaceId").notNull(),
     createdBy: int("createdBy").notNull(),
     slug: varchar("slug", { length: 120 }).notNull(),
+    customDomain: varchar("customDomain", { length: 255 }),
     destinationUrl: text("destinationUrl").notNull(),
     utmSource: varchar("utmSource", { length: 120 }),
     utmMedium: varchar("utmMedium", { length: 120 }),

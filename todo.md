@@ -63,3 +63,14 @@
 - [x] Add font customization controls to Event and QR Studio creative settings
 - [x] Add image and video creative import controls to Event and QR Studio
 - [x] Validate responsive behavior, add tests and documentation, checkpoint, and publish source updates
+- [x] Audit all product pages and shared components for unreadable foreground and background combinations
+- [x] Fix shared button, badge, muted text, card, tab, input, and mobile overlay contrast tokens
+- [x] Apply contrast fixes consistently across workspace overview, Analytics, QR Studio, Events, and other product pages
+- [x] Validate contrast at mobile and desktop widths, update documentation, and checkpoint the fix
+- [x] Normalize destination URLs so users can enter google.com or www.google.com without typing a protocol
+- [x] Add exact scan-count tooltips to Analytics line-chart data points
+- [x] Add mobile and desktop preview toggle to QR Studio
+- [x] Add an accessible dark-mode toggle to the navigation and preserve readable contrast in both themes
+- [x] Add copy actions for shortened links
+- [x] Add custom short-domain support and use it in shortened-link displays instead of forcing knkt.af
+- [x] Validate URL, theme, tooltip, QR preview, copy, and custom-domain flows and checkpoint the update

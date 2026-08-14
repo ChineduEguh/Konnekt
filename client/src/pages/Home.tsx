@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,9 @@ import {
   BriefcaseBusiness,
   Check,
   ChevronRight,
+  Copy,
+  Moon,
+  Sun,
   CircleHelp,
   Clock3,
   ExternalLink,
@@ -82,7 +86,11 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [slug, setSlug] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
+  const [customDomain, setCustomDomain] = useState(
+    () => localStorage.getItem("konnekt-custom-domain") || ""
+  );
   const [campaign, setCampaign] = useState("");
+  const { theme, toggleTheme } = useTheme();
   const workspaceQuery = trpc.workspace.current.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -318,6 +326,15 @@ export default function Home() {
             <h1>Good morning, {user?.name?.split(" ")[0] || "there"}.</h1>
           </div>
           <div className="header-actions">
+            <button
+              type="button"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              className="theme-toggle"
+              onClick={() => toggleTheme?.()}
+            >
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
             <a
               href="/analytics"
               className="hidden rounded-full border border-[#b7dfcf] bg-white px-4 py-2 text-sm font-semibold text-[#0b6b4f] transition hover:bg-[#f1fbf6] sm:inline-flex"
@@ -497,13 +514,16 @@ export default function Home() {
                     <Input
                       value={destinationUrl}
                       onChange={e => setDestinationUrl(e.target.value)}
-                      placeholder="https://yourbrand.com/campaign"
+                      placeholder="google.com or www.google.com"
                     />
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Protocol is added automatically.
+                    </span>
                   </div>
                   <div>
                     <label>Custom slug</label>
                     <div className="input-prefix">
-                      <span>knkt.af/</span>
+                      <span>{customDomain.trim() || "knkt.af"}/</span>
                       <Input
                         value={slug}
                         onChange={e =>
@@ -515,11 +535,31 @@ export default function Home() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label>Short domain</label>
+                    <Input
+                      value={customDomain}
+                      onChange={e => {
+                        setCustomDomain(e.target.value);
+                        localStorage.setItem(
+                          "konnekt-custom-domain",
+                          e.target.value
+                        );
+                      }}
+                      placeholder="elevationng.org"
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 pt-4">
                   <Button
                     disabled={!destinationUrl || !slug || createLink.isPending}
-                    onClick={() => createLink.mutate({ slug, destinationUrl })}
+                    onClick={() =>
+                      createLink.mutate({
+                        slug,
+                        destinationUrl,
+                        customDomain: customDomain.trim() || undefined,
+                      })
+                    }
                     className="rounded-full bg-[#0b6b4f] hover:bg-[#095a43]"
                   >
                     <Link2 size={15} />{" "}
@@ -570,8 +610,25 @@ export default function Home() {
                         <Link2 size={15} />
                       </div>
                       <div className="min-w-0">
-                        <strong className="block truncate text-sm">
-                          knkt.af/{link.slug}
+                        <strong className="flex items-center gap-2 truncate text-sm">
+                          {link.customDomain ||
+                            customDomain.trim() ||
+                            "knkt.af"}
+                          /{link.slug}
+                          <button
+                            type="button"
+                            aria-label="Copy shortened link"
+                            title="Copy shortened link"
+                            className="copy-link-button"
+                            onClick={() => {
+                              void navigator.clipboard.writeText(
+                                `https://${link.customDomain || customDomain.trim() || window.location.host}/${link.slug}`
+                              );
+                              toast.success("Shortened link copied");
+                            }}
+                          >
+                            <Copy size={13} />
+                          </button>
                         </strong>
                         <span className="block max-w-[180px] truncate text-xs text-slate-500">
                           {link.destinationUrl}

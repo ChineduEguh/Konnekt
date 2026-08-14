@@ -49,3 +49,13 @@ QR Studio keeps the preview visible as a distinct section below the controls on 
 ## Analytics, event filtering, and creative customization
 
 The QR scan analytics view uses a responsive line chart for daily scan totals across the selected date range. QR Studio exposes foreground and background brand colours, font selection for the frame label, and local image or video creative preview. Event management provides live attendee search across name, email, phone, and ticket code, plus registered and checked-in filters, event font selection, and local creative preview. Creative files remain local until an authenticated storage workflow is connected, so they are not silently persisted.
+
+## Cross-product contrast system
+
+Konnekt now applies shared contrast guardrails to primary action buttons, muted labels, disabled controls, badges, tabs, form controls, cards, dialogs, and mobile overlay surfaces. Dark green and orange actions force white labels, muted text uses darker readable values, active tabs receive a white surface and dark label, and form placeholders remain visible on light backgrounds. The guardrails complement page-level styling across workspace overview, Analytics, QR Studio, Events, authentication states, empty states, and shared dialogs.
+
+## URL, theme, and preview usability
+
+Smart-link creation accepts destination values such as `google.com` and `www.google.com`; the server adds `https://` before validation and redirect handling. Smart links may include an optional custom short domain such as `elevationng.org`, which is persisted and used in workspace and QR Studio displays. The workspace navigation includes a persisted light or dark theme toggle. Dark theme tokens explicitly set readable foregrounds for controls, cards, tabs, form fields, dialogs, badges, and overlays. Analytics line points expose exact scan totals through interactive tooltips. QR Studio includes mobile and desktop preview frames so users can inspect presentation before saving or downloading.
+
+The dark theme was verified through the preview override at mobile width for workspace overview, Analytics, and QR Studio. Explicit light page backgrounds and brand utility classes are overridden in dark mode so headings, charts, cards, empty states, form fields, buttons, and preview controls remain readable.

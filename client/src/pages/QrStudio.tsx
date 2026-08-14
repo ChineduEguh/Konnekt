@@ -4,6 +4,8 @@ import {
   ArrowLeft,
   Download,
   Link2,
+  Monitor,
+  Smartphone,
   Palette,
   QrCode,
   Sparkles,
@@ -35,6 +37,9 @@ export default function QrStudio() {
   const [logoDataUrl, setLogoDataUrl] = useState("");
   const [logoName, setLogoName] = useState("");
   const [preview, setPreview] = useState("");
+  const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">(
+    "mobile"
+  );
   const workspace = trpc.workspace.current.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -47,7 +52,9 @@ export default function QrStudio() {
   });
   const selected = links.data?.find(link => link.id === linkId);
   const target = selected
-    ? `${window.location.origin}/r/${selected.slug}?source=qr`
+    ? selected.customDomain
+      ? `https://${selected.customDomain}/${selected.slug}?source=qr`
+      : `${window.location.origin}/r/${selected.slug}?source=qr`
     : "https://konnekt.af/connect?source=qr";
   useEffect(() => {
     const render = async () => {
@@ -161,7 +168,7 @@ export default function QrStudio() {
                   <option value="">Choose a smart link</option>
                   {links.data?.map(link => (
                     <option key={link.id} value={link.id}>
-                      knkt.af/{link.slug}
+                      {link.customDomain || "knkt.af"}/{link.slug}
                     </option>
                   ))}
                 </select>
@@ -294,17 +301,42 @@ export default function QrStudio() {
             </CardContent>
           </Card>
           <Card className="qr-studio-preview-card qr-studio-preview rounded-2xl border-[#dfe9e4] shadow-sm">
-            <CardHeader>
+            <CardHeader className="flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2 text-[#003d32]">
                 <QrCode size={18} /> Live preview
               </CardTitle>
+              <div
+                className="preview-toggle"
+                role="group"
+                aria-label="Preview size"
+              >
+                <button
+                  type="button"
+                  className={previewMode === "mobile" ? "active" : ""}
+                  onClick={() => setPreviewMode("mobile")}
+                >
+                  <Smartphone size={14} /> Mobile
+                </button>
+                <button
+                  type="button"
+                  className={previewMode === "desktop" ? "active" : ""}
+                  onClick={() => setPreviewMode("desktop")}
+                >
+                  <Monitor size={14} /> Desktop
+                </button>
+              </div>
             </CardHeader>
             <CardContent>
               <div
                 className="grid min-h-[390px] place-items-center rounded-2xl p-7"
                 style={{ background: backgroundColor }}
               >
-                <div className="rounded-2xl bg-white p-5 shadow-xl">
+                <div
+                  className={`qr-device-frame ${previewMode} rounded-2xl bg-white p-5 shadow-xl`}
+                >
+                  <span className="qr-device-label">
+                    {previewMode === "mobile" ? "Mobile view" : "Desktop view"}
+                  </span>
                   <img
                     src={preview}
                     alt={`QR code for ${selected?.slug || "Konnekt smart link"}`}
@@ -353,7 +385,7 @@ export default function QrStudio() {
                 ) : null}
                 <Link2 size={14} />
                 {selected
-                  ? `Linked to knkt.af/${selected.slug}`
+                  ? `Linked to ${selected.customDomain || "knkt.af"}/${selected.slug}`
                   : "Choose a smart link to bind this QR code"}
               </div>
             </CardContent>
