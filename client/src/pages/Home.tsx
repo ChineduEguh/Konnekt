@@ -5,13 +5,6 @@ import { trpc } from "@/lib/trpc";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -527,9 +520,11 @@ export default function Home() {
                     <span className="mt-1 block text-xs text-slate-500">
                       Paste any URL. Protocol is added automatically.
                     </span>
-                    <Select
+                    <select
+                      aria-label="Select an existing shortened link"
                       value={selectedExistingLinkId}
-                      onValueChange={value => {
+                      onChange={e => {
+                        const value = e.target.value;
                         const selected = currentLinks.find(
                           link => String(link.id) === value
                         );
@@ -539,27 +534,22 @@ export default function Home() {
                           `https://${selected.customDomain || customDomain.trim() || window.location.host}/${selected.slug}`
                         );
                       }}
+                      className="mt-2 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700"
                     >
-                      <SelectTrigger className="mt-2 h-9 rounded-lg bg-white text-xs">
-                        <SelectValue placeholder="Or select an existing shortened link" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currentLinks.length ? (
-                          currentLinks.map(link => (
-                            <SelectItem key={link.id} value={String(link.id)}>
-                              {link.customDomain ||
-                                customDomain.trim() ||
-                                "knkt.af"}
-                              /{link.slug}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-links" disabled>
-                            No shortened links available yet
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                      <option value="">
+                        {currentLinks.length
+                          ? "Or select an existing shortened link"
+                          : "No shortened links available yet"}
+                      </option>
+                      {currentLinks.map(link => (
+                        <option key={link.id} value={String(link.id)}>
+                          {link.customDomain ||
+                            customDomain.trim() ||
+                            "knkt.af"}
+                          /{link.slug}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label>Custom slug</label>

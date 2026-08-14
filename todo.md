@@ -82,3 +82,4 @@
 - [x] Verify dark-mode readability at mobile and desktop widths and checkpoint the regression fix
 - [x] Allow Smart Link destinations to accept any user-entered or pasted URL and optionally select an existing shortened link
 - [x] Validate and document Smart Link destination entry and shortened-link selection behavior
+- [x] Fix Smart Link page crash caused by the existing shortened-link selector and verify the destination workflow remains usable
