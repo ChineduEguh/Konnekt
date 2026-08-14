@@ -45,3 +45,7 @@ The analytics page aggregates QR-origin scan events by day and provides date win
 The Analytics dashboard now provides a first-use empty state that points new workspaces toward creating a smart link or event. Its export controls, chart card, and empty-state actions use mobile-specific stacking and touch target sizing.
 
 QR Studio keeps the preview visible as a distinct section below the controls on phones. Uploaded logos are composited into the QR canvas before the preview and download data URL are updated. The preview identifies whether a centre logo is active and reports an actionable error if the selected image cannot be decoded.
+
+## Analytics, event filtering, and creative customization
+
+The QR scan analytics view uses a responsive line chart for daily scan totals across the selected date range. QR Studio exposes foreground and background brand colours, font selection for the frame label, and local image or video creative preview. Event management provides live attendee search across name, email, phone, and ticket code, plus registered and checked-in filters, event font selection, and local creative preview. Creative files remain local until an authenticated storage workflow is connected, so they are not silently persisted.

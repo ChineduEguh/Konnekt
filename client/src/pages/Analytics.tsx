@@ -19,8 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { scansToCsv, scansToTsv } from "@shared/export";
 import {
-  Area,
-  AreaChart,
+  Line,
+  LineChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -182,21 +182,7 @@ export default function Analytics() {
             <div className="h-[360px] w-full">
               {rows.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rows}>
-                    <defs>
-                      <linearGradient id="scanFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor="#0b6b4f"
-                          stopOpacity={0.28}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#0b6b4f"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
+                  <LineChart data={rows}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5ece8" />
                     <XAxis
                       dataKey="day"
@@ -211,14 +197,15 @@ export default function Analytics() {
                       axisLine={false}
                     />
                     <Tooltip />
-                    <Area
+                    <Line
                       type="monotone"
                       dataKey="scans"
                       stroke="#0b6b4f"
-                      fill="url(#scanFill)"
                       strokeWidth={3}
+                      dot={{ r: 3, fill: "#e46f2e", strokeWidth: 0 }}
+                      activeDot={{ r: 6, fill: "#e46f2e" }}
                     />
-                  </AreaChart>
+                  </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="analytics-empty grid h-full place-items-center rounded-2xl bg-[#f4faf7] px-5 py-8 text-center text-slate-500">

@@ -29,6 +29,9 @@ export default function QrStudio() {
   const [backgroundColor, setBackgroundColor] = useState("#DDF8EC");
   const [shape, setShape] = useState<"square" | "dots" | "rounded">("rounded");
   const [frameLabel, setFrameLabel] = useState("SCAN TO CONNECT");
+  const [fontFamily, setFontFamily] = useState("Space Grotesk");
+  const [creativeName, setCreativeName] = useState("");
+  const [creativeUrl, setCreativeUrl] = useState("");
   const [logoDataUrl, setLogoDataUrl] = useState("");
   const [logoName, setLogoName] = useState("");
   const [preview, setPreview] = useState("");
@@ -220,6 +223,39 @@ export default function QrStudio() {
                 </span>
               </label>
               <label className="block text-xs font-semibold text-slate-600">
+                Font style
+                <select
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  value={fontFamily}
+                  onChange={e => setFontFamily(e.target.value)}
+                >
+                  <option>Space Grotesk</option>
+                  <option>Inter</option>
+                  <option>DM Sans</option>
+                  <option>Georgia</option>
+                </select>
+              </label>
+              <label className="block text-xs font-semibold text-slate-600">
+                Image or video creative
+                <Input
+                  className="mt-1"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 8 * 1024 * 1024)
+                      return toast.error("Creative must be smaller than 8 MB");
+                    setCreativeName(file.name);
+                    setCreativeUrl(URL.createObjectURL(file));
+                  }}
+                />
+                <span className="mt-1 block text-[11px] font-normal text-slate-400">
+                  Optional campaign reference. Images and videos stay local
+                  until storage is connected.
+                </span>
+              </label>
+              <label className="block text-xs font-semibold text-slate-600">
                 Frame label
                 <Input
                   className="mt-1"
@@ -276,12 +312,32 @@ export default function QrStudio() {
                   />
                   <div
                     className="mt-3 text-center font-mono text-[10px] font-semibold tracking-[.16em]"
-                    style={{ color: foregroundColor }}
+                    style={{ color: foregroundColor, fontFamily }}
                   >
                     {frameLabel}
                   </div>
                 </div>
               </div>
+              {creativeUrl ? (
+                <div className="mb-4 overflow-hidden rounded-xl border border-[#dfe9e4] bg-white">
+                  {creativeName.match(/\.(mp4|webm)$/i) ? (
+                    <video
+                      src={creativeUrl}
+                      controls
+                      className="max-h-40 w-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={creativeUrl}
+                      alt={creativeName}
+                      className="max-h-40 w-full object-cover"
+                    />
+                  )}
+                  <p className="truncate px-3 py-2 text-xs text-slate-500">
+                    {creativeName}
+                  </p>
+                </div>
+              ) : null}
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 {logoDataUrl ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#e5f8ef] px-2.5 py-1 font-semibold text-[#087443]">
