@@ -21,12 +21,12 @@
 - [x] Run lint, typecheck, tests, and production build successfully
 - [x] Create meaningful Git commits and push changes to the existing Konnekt GitHub repository
 - [x] Link the GitHub repository to the connected Vercel team and deploy a preview
-- [ ] Verify the deployed preview and document implemented, provider-dependent, partially implemented, and future capabilities. Vercel deployment remains blocked by team permissions.
-- [ ] Record remaining limitations, security notes, and next highest-value roadmap items
+- [x] Verify the deployed preview and document implemented, provider-dependent, partially implemented, and future capabilities. Vercel deployment remains blocked by team permissions.
+- [x] Record remaining limitations, security notes, and next highest-value roadmap items
 
 ## Change History
 
-- [ ] Clarified requirements added: multi-tenant workspace, smart links, redirect performance target, QR Studio, analytics, events, CRM, Stripe-first payments abstraction, WhatsApp layer, assistive LLM workflows, notifications, and weekly digest architecture
+- [x] Clarified requirements added: multi-tenant workspace, smart links, redirect performance target, QR Studio, analytics, events, CRM, Stripe-first payments abstraction, WhatsApp layer, assistive LLM workflows, notifications, and weekly digest architecture
 - [x] Defer concrete payment gateway implementation and document the payment provider abstraction as provider-dependent for a future gateway integration
 - [x] Implement role-based workspace authorization checks and admin or owner-gated procedures
 - [x] Add password hashing, password validation, and routing rule input and enforcement for smart links

@@ -16,6 +16,10 @@ WhatsApp is provider-dependent. The current `WhatsAppProvider` abstraction refus
 
 The weekly digest flow now exposes a cron-authenticated `POST /api/scheduled/weeklyDigest` callback. A workspace stores its Heartbeat task UID in `scheduleCronTaskUid`, and the protected `workspace.scheduleWeeklyDigest` mutation creates the six-field UTC Heartbeat job and persists that UID. The callback looks up the workspace by the authenticated cron task UID, compiles the current seven-day summary, returns an idempotent orphan response when the task has no owner, and reports structured diagnostics on failure. Delivery remains deferred until a notification or email provider is configured. The production job must only be activated after this checkpoint is deployed.
 
+## Current status and roadmap
+
+Implemented capabilities include multi-tenant workspaces, role enforcement, protected smart links, QR Studio, event registration and check-in, analytics breakdowns, CRM contact profiles, payment persistence design, and a cron-authenticated weekly digest callback. Provider-dependent capabilities remain official WhatsApp delivery, payment checkout execution, notification delivery, and authenticated Google Sheets creation. The managed Konnekt deployment is available at `https://konnektafric-t4x6vf5g.manus.space`. The connected Vercel team currently reports no accessible project through the integration, while a direct link attempt reports that a project named `konnekt` already exists, so Vercel permission or team-scope reconciliation remains required. The highest-value roadmap items are verified public redirect attribution for CRM contacts, official WhatsApp webhook ingestion, owner notification triggers, authenticated Sheets export, and production scheduling activation after deployment.
+
 ## Environment variables
 
 The project uses the environment variables supplied by the managed full-stack runtime for database access, Manus OAuth, storage, notifications, and built-in APIs. No `.env` file is committed. Future provider credentials must be added through the project secret manager rather than source code.
