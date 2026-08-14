@@ -10,11 +10,13 @@ import {
   checkInRegistration,
   createQrCode,
   createWorkspaceEvent,
+  createWorkspaceContact,
   createWorkspaceLink,
   findLinkBySlug,
   getOrCreateWorkspace,
   getWorkspaceLinks,
   getContactWorkspaceId,
+  listWorkspaceContacts,
   getEventWorkspaceId,
   getRegistrationWorkspaceId,
   getSmartLinkWorkspaceId,
@@ -283,6 +285,32 @@ export const appRouter = router({
         if (!workspaceId) throw new Error("Ticket not found");
         await requireWorkspaceRole(workspaceId, ctx.user.id);
         return checkInRegistration(input.ticketCode);
+      }),
+  }),
+  contacts: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const workspace = await getOrCreateWorkspace(ctx.user);
+      if (!workspace) throw new Error("Workspace could not be initialized");
+      await requireWorkspaceRole(workspace.id, ctx.user.id);
+      return listWorkspaceContacts(workspace.id);
+    }),
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().max(180).optional(),
+          email: z.string().email().max(320).optional(),
+          phone: z.string().max(40).optional(),
+          whatsappOptIn: z.boolean().default(false),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id, [
+          "owner",
+          "admin",
+        ]);
+        return createWorkspaceContact({ ...input, workspaceId: workspace.id });
       }),
   }),
   conversations: router({

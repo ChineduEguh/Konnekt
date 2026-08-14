@@ -152,6 +152,31 @@ export async function setWorkspaceScheduleCronTaskUid(
     .where(eq(workspaces.id, workspaceId));
 }
 
+export async function listWorkspaceContacts(workspaceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(contacts)
+    .where(eq(contacts.workspaceId, workspaceId))
+    .orderBy(desc(contacts.updatedAt))
+    .limit(100);
+}
+
+export async function createWorkspaceContact(
+  input: typeof contacts.$inferInsert
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const inserted = await db.insert(contacts).values(input);
+  const rows = await db
+    .select()
+    .from(contacts)
+    .where(eq(contacts.id, Number(inserted[0].insertId)))
+    .limit(1);
+  return rows[0];
+}
+
 export async function getContactWorkspaceId(contactId: number) {
   const db = await getDb();
   if (!db) return undefined;

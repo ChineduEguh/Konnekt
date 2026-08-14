@@ -38,7 +38,7 @@ QR Studio stores dynamic QR assets in `qrCodes`, each bound to a smart link. The
 
 QR Studio accepts PNG, JPEG, and WebP logo files up to 1 MB. The client composites the logo into a centered high-error-correction panel, while the server uploads the original file to managed storage and persists the returned storage URL on the QR asset.
 
-The analytics page aggregates QR-origin scan events by day and provides date windows for 7, 30, and 90 days. CSV export downloads a portable file directly. The Google Sheets action copies tab-separated data to the clipboard and opens a new Sheet so the user can paste the dataset into a live spreadsheet without exposing credentials to the application. Event management provides the same direct CSV download pattern for attendee records.
+The analytics page aggregates QR-origin scan events by day and provides date windows for 7, 30, and 90 days. CSV export downloads a portable file directly. The Google Sheets action copies tab-separated data to the clipboard and opens a new Sheet so the user can paste the dataset into a live spreadsheet without exposing credentials to the application. Event management provides the same direct CSV download pattern for attendee records. CRM contact profiles now have tenant-scoped list and create procedures, and their WhatsApp message timeline is available through the protected conversations procedures.
 
 ## Analytics and QR Studio usability
 
