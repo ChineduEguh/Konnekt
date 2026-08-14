@@ -18,6 +18,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { isWorkspaceRoleAllowed } from "./security";
+import { notifyWorkspaceOwner } from "./providers";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -511,7 +512,11 @@ export async function registerAttendee(
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const eventRows = await db
-    .select({ capacity: events.capacity })
+    .select({
+      capacity: events.capacity,
+      workspaceId: events.workspaceId,
+      title: events.title,
+    })
     .from(events)
     .where(eq(events.id, input.eventId))
     .limit(1);
@@ -534,6 +539,25 @@ export async function registerAttendee(
     .from(eventRegistrations)
     .where(eq(eventRegistrations.id, Number(result[0].insertId)))
     .limit(1);
+  if (event.capacity) {
+    const [updatedCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(eventRegistrations)
+      .where(
+        and(
+          eq(eventRegistrations.eventId, input.eventId),
+          eq(eventRegistrations.status, "registered")
+        )
+      );
+    if (Number(updatedCount?.count ?? 0) >= event.capacity) {
+      void notifyWorkspaceOwner({
+        workspaceId: event.workspaceId,
+        type: "event_sellout",
+        title: `${event.title} is sold out`,
+        body: `The event reached its configured capacity of ${event.capacity}.`,
+      });
+    }
+  }
   return rows[0];
 }
 
@@ -738,4 +762,24 @@ export async function recordConnectionEvent(
   const db = await getDb();
   if (!db) return;
   await db.insert(connectionEvents).values(input);
+  if (input.eventType === "click") {
+    const [clicks] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(connectionEvents)
+      .where(
+        and(
+          eq(connectionEvents.workspaceId, input.workspaceId),
+          eq(connectionEvents.eventType, "click")
+        )
+      );
+    const totalClicks = Number(clicks?.count ?? 0);
+    if (totalClicks > 0 && totalClicks % 100 === 0) {
+      void notifyWorkspaceOwner({
+        workspaceId: input.workspaceId,
+        type: "click_milestone",
+        title: `${totalClicks.toLocaleString()} clicks captured`,
+        body: "Your connection layer reached a new click milestone.",
+      });
+    }
+  }
 }
