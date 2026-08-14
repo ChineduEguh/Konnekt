@@ -159,11 +159,14 @@ export default function Home() {
             <div className="flex flex-wrap gap-3">
               <Button
                 onClick={() => startLogin()}
-                className="rounded-full bg-[#0b6b4f] px-6 hover:bg-[#095a43]"
+                className="rounded-full bg-[#0b6b4f] px-6 text-white shadow-[0_12px_28px_rgba(11,107,79,0.22)] hover:bg-[#095a43]"
               >
                 Open your workspace <ArrowUpRight size={16} />
               </Button>
-              <Button variant="ghost" className="rounded-full text-slate-600">
+              <Button
+                variant="outline"
+                className="rounded-full border-[#b7dfcf] bg-white text-[#245247] hover:bg-[#f0faf5]"
+              >
                 Explore the platform <ChevronRight size={16} />
               </Button>
             </div>

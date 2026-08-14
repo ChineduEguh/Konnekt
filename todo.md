@@ -21,7 +21,7 @@
 - [x] Run lint, typecheck, tests, and production build successfully
 - [x] Create meaningful Git commits and push changes to the existing Konnekt GitHub repository
 - [x] Link the GitHub repository to the connected Vercel team and deploy a preview
-- [ ] Verify the deployed preview and document implemented, provider-dependent, partially implemented, and future capabilities
+- [ ] Verify the deployed preview and document implemented, provider-dependent, partially implemented, and future capabilities. Vercel deployment remains blocked by team permissions.
 - [ ] Record remaining limitations, security notes, and next highest-value roadmap items
 
 ## Change History
@@ -49,4 +49,6 @@
 - [ ] Add direct one-click QR scan exports to a Google Sheet through an authenticated Sheets API integration
 - [x] Add attendee CSV export to event management
 - [x] Add tests and documentation for QR logo, analytics, and export workflows
-- [ ] Commit the analytics and export milestone to GitHub and update the linked Vercel project
+- [x] Commit the analytics and export milestone to GitHub and attempt the linked Vercel project update
+- [x] Fix public landing page mobile readability, contrast, spacing, browser-safe viewport behavior, and first-action clarity based on user screenshot
+- [x] Verify landing page at phone and desktop widths and checkpoint the usability fix
