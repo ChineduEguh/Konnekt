@@ -83,3 +83,6 @@
 - [x] Allow Smart Link destinations to accept any user-entered or pasted URL and optionally select an existing shortened link
 - [x] Validate and document Smart Link destination entry and shortened-link selection behavior
 - [x] Fix Smart Link page crash caused by the existing shortened-link selector and verify the destination workflow remains usable
+- [x] Restore Smart Link destination form to its prior behavior without the existing-link selector
+- [x] Allow QR Studio to accept either an existing smart link or any manually entered URL for QR generation
+- [x] Validate and document the corrected QR Studio destination workflow

@@ -27,6 +27,7 @@ export default function QrStudio() {
   });
   const qrList = trpc.qr.list.useQuery(undefined, { enabled: isAuthenticated });
   const [linkId, setLinkId] = useState<number | null>(null);
+  const [manualUrl, setManualUrl] = useState("");
   const [name, setName] = useState("Campaign QR");
   const [foregroundColor, setForegroundColor] = useState("#003D32");
   const [backgroundColor, setBackgroundColor] = useState("#DDF8EC");
@@ -52,11 +53,18 @@ export default function QrStudio() {
     onError: e => toast.error(e.message),
   });
   const selected = links.data?.find(link => link.id === linkId);
-  const target = selected
-    ? selected.customDomain
-      ? `https://${selected.customDomain}/${selected.slug}?source=qr`
-      : `${window.location.origin}/r/${selected.slug}?source=qr`
-    : "https://konnekt.af/connect?source=qr";
+  const normalizeQrDestination = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "https://konnekt.af/connect?source=qr";
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
+  const target = manualUrl.trim()
+    ? normalizeQrDestination(manualUrl)
+    : selected
+      ? selected.customDomain
+        ? `https://${selected.customDomain}/${selected.slug}?source=qr`
+        : `${window.location.origin}/r/${selected.slug}?source=qr`
+      : "https://konnekt.af/connect?source=qr";
   useEffect(() => {
     const render = async () => {
       const canvas = document.createElement("canvas");
@@ -163,11 +171,29 @@ export default function QrStudio() {
                 />
               </label>
               <label className="block text-xs font-semibold text-slate-600">
-                Smart link destination
+                QR destination URL
+                <Input
+                  className="mt-1"
+                  value={manualUrl}
+                  onChange={e => {
+                    setManualUrl(e.target.value);
+                    if (e.target.value.trim()) setLinkId(null);
+                  }}
+                  placeholder="google.com or https://your-site.com"
+                />
+                <span className="mt-1 block text-[11px] font-normal text-slate-400">
+                  Type or paste any URL. Protocol is added automatically.
+                </span>
+              </label>
+              <label className="block text-xs font-semibold text-slate-600">
+                Or choose an existing smart link
                 <select
                   className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
                   value={linkId || ""}
-                  onChange={e => setLinkId(Number(e.target.value) || null)}
+                  onChange={e => {
+                    setLinkId(Number(e.target.value) || null);
+                    setManualUrl("");
+                  }}
                 >
                   <option value="">Choose a smart link</option>
                   {links.data?.map(link => (
@@ -277,11 +303,14 @@ export default function QrStudio() {
               </label>
               <div className="flex flex-wrap gap-2">
                 <Button
-                  disabled={!linkId || createQr.isPending}
+                  disabled={
+                    (!linkId && !manualUrl.trim()) || createQr.isPending
+                  }
                   className="rounded-full bg-[#003d32] text-white hover:bg-[#0b6b4f]"
                   onClick={() =>
                     createQr.mutate({
-                      smartLinkId: linkId!,
+                      smartLinkId: linkId || undefined,
+                      destinationUrl: manualUrl.trim() || undefined,
                       name,
                       foregroundColor,
                       backgroundColor,
@@ -343,7 +372,7 @@ export default function QrStudio() {
                   </span>
                   <img
                     src={preview}
-                    alt={`QR code for ${selected?.slug || "Konnekt smart link"}`}
+                    alt={`QR code for ${manualUrl.trim() || selected?.slug || "Konnekt destination"}`}
                     className={`h-64 w-64 ${shape === "rounded" ? "rounded-3xl" : shape === "dots" ? "rounded-full" : ""}`}
                   />
                   <div

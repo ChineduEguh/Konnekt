@@ -57,6 +57,13 @@
       "when": 1786691907467,
       "tag": "0007_tiny_red_shift",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1786694176065,
+      "tag": "0008_brief_quentin_quire",
+      "breakpoints": true
     }
   ]
 }

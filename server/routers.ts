@@ -420,7 +420,8 @@ export const appRouter = router({
     create: protectedProcedure
       .input(
         z.object({
-          smartLinkId: z.number().int().positive(),
+          smartLinkId: z.number().int().positive().optional(),
+          destinationUrl: z.string().min(3).max(2000).optional(),
           name: z.string().min(2).max(160),
           foregroundColor: z
             .string()
@@ -438,11 +439,17 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const workspace = await getOrCreateWorkspace(ctx.user);
         if (!workspace) throw new Error("Workspace could not be initialized");
-        const smartLinkWorkspaceId = await getSmartLinkWorkspaceId(
-          input.smartLinkId
-        );
-        if (smartLinkWorkspaceId !== workspace.id)
-          throw new Error("Smart link access denied");
+        if (!input.smartLinkId && !input.destinationUrl)
+          throw new Error("Choose a smart link or enter a destination URL");
+        if (input.smartLinkId && input.destinationUrl)
+          throw new Error("Choose one QR destination source");
+        if (input.smartLinkId) {
+          const smartLinkWorkspaceId = await getSmartLinkWorkspaceId(
+            input.smartLinkId
+          );
+          if (smartLinkWorkspaceId !== workspace.id)
+            throw new Error("Smart link access denied");
+        }
         await requireWorkspaceRole(workspace.id, ctx.user.id, [
           "owner",
           "admin",
@@ -465,7 +472,14 @@ export const appRouter = router({
           logoUrl = uploaded.url;
         }
         const { logoDataUrl: _logoDataUrl, ...qrInput } = input;
-        return createQrCode({ ...qrInput, logoUrl, workspaceId: workspace.id });
+        return createQrCode({
+          ...qrInput,
+          destinationUrl: input.destinationUrl
+            ? normalizeDestination(input.destinationUrl)
+            : null,
+          logoUrl,
+          workspaceId: workspace.id,
+        });
       }),
   }),
   ai: router({

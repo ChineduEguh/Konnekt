@@ -86,7 +86,6 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [slug, setSlug] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
-  const [selectedExistingLinkId, setSelectedExistingLinkId] = useState("");
   const [customDomain, setCustomDomain] = useState(() => {
     const stored = localStorage.getItem("konnekt-custom-domain") || "";
     if (stored.trim().toLowerCase() === "elevationng.org") {
@@ -111,7 +110,6 @@ export default function Home() {
       summaryQuery.refetch();
       setSlug("");
       setDestinationUrl("");
-      setSelectedExistingLinkId("");
       toast.success("Smart link created");
     },
     onError: error => toast.error(error.message),
@@ -511,45 +509,12 @@ export default function Home() {
                     <label>Destination URL</label>
                     <Input
                       value={destinationUrl}
-                      onChange={e => {
-                        setDestinationUrl(e.target.value);
-                        setSelectedExistingLinkId("");
-                      }}
+                      onChange={e => setDestinationUrl(e.target.value)}
                       placeholder="google.com or www.google.com"
                     />
                     <span className="mt-1 block text-xs text-slate-500">
                       Paste any URL. Protocol is added automatically.
                     </span>
-                    <select
-                      aria-label="Select an existing shortened link"
-                      value={selectedExistingLinkId}
-                      onChange={e => {
-                        const value = e.target.value;
-                        const selected = currentLinks.find(
-                          link => String(link.id) === value
-                        );
-                        if (!selected) return;
-                        setSelectedExistingLinkId(value);
-                        setDestinationUrl(
-                          `https://${selected.customDomain || customDomain.trim() || window.location.host}/${selected.slug}`
-                        );
-                      }}
-                      className="mt-2 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700"
-                    >
-                      <option value="">
-                        {currentLinks.length
-                          ? "Or select an existing shortened link"
-                          : "No shortened links available yet"}
-                      </option>
-                      {currentLinks.map(link => (
-                        <option key={link.id} value={String(link.id)}>
-                          {link.customDomain ||
-                            customDomain.trim() ||
-                            "knkt.af"}
-                          /{link.slug}
-                        </option>
-                      ))}
-                    </select>
                   </div>
                   <div>
                     <label>Custom slug</label>

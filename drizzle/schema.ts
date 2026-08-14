@@ -173,7 +173,8 @@ export const eventRegistrations = mysqlTable(
 export const qrCodes = mysqlTable("qrCodes", {
   id: int("id").autoincrement().primaryKey(),
   workspaceId: int("workspaceId").notNull(),
-  smartLinkId: int("smartLinkId").notNull(),
+  smartLinkId: int("smartLinkId"),
+  destinationUrl: text("destinationUrl"),
   name: varchar("name", { length: 160 }).notNull(),
   foregroundColor: varchar("foregroundColor", { length: 16 })
     .default("#003D32")
