@@ -13,6 +13,7 @@ import {
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -100,7 +101,8 @@ export default function Analytics() {
               Sheets in one click.
             </p>
           </div>
-          <div className="analytics-actions flex flex-wrap gap-2">
+          <div className="analytics-actions flex flex-wrap items-center gap-2">
+            <ThemeToggle />
             <select
               className="h-10 rounded-full border border-slate-200 bg-white px-4 text-sm"
               value={range}

@@ -59,3 +59,7 @@ Konnekt now applies shared contrast guardrails to primary action buttons, muted 
 Smart-link creation accepts destination values such as `google.com` and `www.google.com`; the server adds `https://` before validation and redirect handling. Smart links may include an optional custom short domain such as `elevationng.org`, which is persisted and used in workspace and QR Studio displays. The workspace navigation includes a persisted light or dark theme toggle. Dark theme tokens explicitly set readable foregrounds for controls, cards, tabs, form fields, dialogs, badges, and overlays. Analytics line points expose exact scan totals through interactive tooltips. QR Studio includes mobile and desktop preview frames so users can inspect presentation before saving or downloading.
 
 The dark theme was verified through the preview override at mobile width for workspace overview, Analytics, and QR Studio. Explicit light page backgrounds and brand utility classes are overridden in dark mode so headings, charts, cards, empty states, form fields, buttons, and preview controls remain readable.
+
+## Global theme and custom-domain defaults
+
+Authenticated workspace pages share a visible top-right light or dark mode toggle. The control includes an accessible label, persists the user preference, and remains readable at mobile and desktop widths. Workspace custom-domain input no longer pre-populates a personal example. Existing browser storage containing `elevationng.org` is cleared, and new users see the neutral `yourbrand.com` placeholder instead.
