@@ -516,6 +516,120 @@ export async function getQrScanAnalytics(
     .orderBy(sql`DATE(${connectionEvents.occurredAt})`);
 }
 
+export async function getAnalyticsOverview(
+  workspaceId: number,
+  from?: Date,
+  to?: Date
+) {
+  const db = await getDb();
+  if (!db)
+    return {
+      geography: [],
+      devices: [],
+      browsers: [],
+      topLinks: [],
+      funnel: { clicks: 0, scans: 0, registrations: 0, checkins: 0 },
+    };
+  const baseClauses = [eq(connectionEvents.workspaceId, workspaceId)];
+  if (from)
+    baseClauses.push(sql`${connectionEvents.occurredAt} >= ${from}` as any);
+  if (to) baseClauses.push(sql`${connectionEvents.occurredAt} <= ${to}` as any);
+  const [
+    geography,
+    devices,
+    browsers,
+    topLinks,
+    clicks,
+    scans,
+    registrations,
+    checkins,
+  ] = await Promise.all([
+    db
+      .select({
+        country: connectionEvents.country,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(connectionEvents)
+      .where(and(...baseClauses, eq(connectionEvents.eventType, "scan")))
+      .groupBy(connectionEvents.country)
+      .orderBy(desc(sql`COUNT(*)`))
+      .limit(10),
+    db
+      .select({
+        device: connectionEvents.deviceType,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(connectionEvents)
+      .where(and(...baseClauses, eq(connectionEvents.eventType, "scan")))
+      .groupBy(connectionEvents.deviceType)
+      .orderBy(desc(sql`COUNT(*)`))
+      .limit(10),
+    db
+      .select({
+        browser: connectionEvents.browser,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(connectionEvents)
+      .where(and(...baseClauses, eq(connectionEvents.eventType, "scan")))
+      .groupBy(connectionEvents.browser)
+      .orderBy(desc(sql`COUNT(*)`))
+      .limit(10),
+    db
+      .select({
+        linkId: connectionEvents.linkId,
+        slug: smartLinks.slug,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(connectionEvents)
+      .leftJoin(smartLinks, eq(connectionEvents.linkId, smartLinks.id))
+      .where(and(...baseClauses, sql`${connectionEvents.linkId} IS NOT NULL`))
+      .groupBy(connectionEvents.linkId, smartLinks.slug)
+      .orderBy(desc(sql`COUNT(*)`))
+      .limit(10),
+    db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(connectionEvents)
+      .where(and(...baseClauses, eq(connectionEvents.eventType, "click"))),
+    db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(connectionEvents)
+      .where(and(...baseClauses, eq(connectionEvents.eventType, "scan"))),
+    db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(eventRegistrations)
+      .where(
+        and(
+          eq(eventRegistrations.workspaceId, workspaceId),
+          from ? sql`${eventRegistrations.registeredAt} >= ${from}` : undefined,
+          to ? sql`${eventRegistrations.registeredAt} <= ${to}` : undefined
+        )
+      ),
+    db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(eventRegistrations)
+      .where(
+        and(
+          eq(eventRegistrations.workspaceId, workspaceId),
+          eq(eventRegistrations.status, "checked_in"),
+          from ? sql`${eventRegistrations.checkedInAt} >= ${from}` : undefined,
+          to ? sql`${eventRegistrations.checkedInAt} <= ${to}` : undefined
+        )
+      ),
+  ]);
+  return {
+    geography,
+    devices,
+    browsers,
+    topLinks,
+    funnel: {
+      clicks: Number(clicks[0]?.count ?? 0),
+      scans: Number(scans[0]?.count ?? 0),
+      registrations: Number(registrations[0]?.count ?? 0),
+      checkins: Number(checkins[0]?.count ?? 0),
+    },
+  };
+}
+
 export async function listWorkspaceQrCodes(workspaceId: number) {
   const db = await getDb();
   if (!db) return [];

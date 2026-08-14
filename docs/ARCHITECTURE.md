@@ -42,7 +42,7 @@ The analytics page aggregates QR-origin scan events by day and provides date win
 
 ## Analytics and QR Studio usability
 
-The Analytics dashboard now provides a first-use empty state that points new workspaces toward creating a smart link or event. Its export controls, chart card, and empty-state actions use mobile-specific stacking and touch target sizing. The protected `analytics.summary` procedure supplies a factual, structured LLM summary of current workspace metrics and falls back to a deterministic sentence when the model is unavailable.
+The Analytics dashboard now provides a first-use empty state that points new workspaces toward creating a smart link or event. Its export controls, chart card, and empty-state actions use mobile-specific stacking and touch target sizing. The protected `analytics.summary` procedure supplies a factual, structured LLM summary of current workspace metrics and falls back to a deterministic sentence when the model is unavailable. The protected `analytics.overview` procedure and dashboard cards expose factual geography, device, browser, identifiable smart-link slug, and conversion-funnel breakdowns for the selected date range. Registration and check-in funnel stages are sourced from event registration records, while click and scan stages are sourced from connection events.
 
 QR Studio keeps the preview visible as a distinct section below the controls on phones. Uploaded logos are composited into the QR canvas before the preview and download data URL are updated. The preview identifies whether a centre logo is active and reports an actionable error if the selected image cannot be decoded.
 

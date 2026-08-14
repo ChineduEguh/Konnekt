@@ -3,6 +3,9 @@ import {
   ArrowLeft,
   BarChart3,
   CalendarRange,
+  Globe2,
+  Smartphone,
+  Languages,
   Clipboard,
   Download,
   ExternalLink,
@@ -35,6 +38,10 @@ export default function Analytics() {
   const from = useMemo(() => new Date(Date.now() - range * 86400000), [range]);
   const to = useMemo(() => new Date(), []);
   const query = trpc.analytics.qrScans.useQuery(
+    { from, to },
+    { enabled: isAuthenticated }
+  );
+  const overview = trpc.analytics.overview.useQuery(
     { from, to },
     { enabled: isAuthenticated }
   );
@@ -257,6 +264,118 @@ export default function Analytics() {
             </div>
           </CardContent>
         </Card>
+        <div className="mt-5 grid gap-5 xl:grid-cols-2">
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#003d32]">
+                <Globe2 size={18} /> Scan geography
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(overview.data?.geography ?? []).length ? (
+                overview.data?.geography.map(item => (
+                  <div
+                    key={item.country || "unknown"}
+                    className="flex items-center justify-between rounded-lg bg-[#f4faf7] px-3 py-2 text-sm"
+                  >
+                    <span>{item.country || "Unknown"}</span>
+                    <strong>{Number(item.count).toLocaleString()}</strong>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">
+                  Country data will appear after scans include a country signal.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#003d32]">
+                <Smartphone size={18} /> Devices and browsers
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="eyebrow mb-2">DEVICES</p>
+                {(overview.data?.devices ?? []).map(item => (
+                  <div
+                    key={item.device || "unknown"}
+                    className="flex justify-between py-1 text-sm"
+                  >
+                    <span>{item.device || "Unknown"}</span>
+                    <strong>{Number(item.count).toLocaleString()}</strong>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="eyebrow mb-2">
+                  <Languages size={13} className="inline mr-1" />
+                  BROWSERS
+                </p>
+                {(overview.data?.browsers ?? []).map(item => (
+                  <div
+                    key={item.browser || "unknown"}
+                    className="flex justify-between py-1 text-sm"
+                  >
+                    <span>{item.browser || "Unknown"}</span>
+                    <strong>{Number(item.count).toLocaleString()}</strong>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-[#003d32]">
+                Conversion funnel
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {Object.entries(
+                overview.data?.funnel ?? {
+                  clicks: 0,
+                  scans: 0,
+                  registrations: 0,
+                  checkins: 0,
+                }
+              ).map(([label, value]) => (
+                <div key={label} className="rounded-xl bg-[#f4faf7] p-3">
+                  <p className="eyebrow">{label}</p>
+                  <strong className="mt-2 block text-2xl text-[#003d32]">
+                    {Number(value).toLocaleString()}
+                  </strong>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-[#003d32]">Top active links</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {(overview.data?.topLinks ?? []).length ? (
+                overview.data?.topLinks.map(item => (
+                  <div
+                    key={item.linkId || "unknown"}
+                    className="flex justify-between rounded-lg border border-[#dfe9e4] px-3 py-2 text-sm"
+                  >
+                    <span>
+                      {item.slug || `Link ${item.linkId || "unknown"}`}
+                    </span>
+                    <strong>
+                      {Number(item.count).toLocaleString()} signals
+                    </strong>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">
+                  Top links will appear after connection activity is recorded.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         <Card className="mt-5 rounded-2xl border-[#dfe9e4] shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#003d32]">

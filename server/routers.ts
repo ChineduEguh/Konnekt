@@ -23,6 +23,7 @@ import {
   requireWorkspaceRole,
   setWorkspaceScheduleCronTaskUid,
   getWorkspaceSummary,
+  getAnalyticsOverview,
   getOrCreateWhatsappConversation,
   createWhatsappMessage,
   listWhatsappMessages,
@@ -375,6 +376,18 @@ export const appRouter = router({
         events: summary.events,
       });
     }),
+    overview: protectedProcedure
+      .input(
+        z
+          .object({ from: z.date().optional(), to: z.date().optional() })
+          .optional()
+      )
+      .query(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id);
+        return getAnalyticsOverview(workspace.id, input?.from, input?.to);
+      }),
     qrScans: protectedProcedure
       .input(
         z
