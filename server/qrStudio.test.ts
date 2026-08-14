@@ -59,11 +59,16 @@ describe("QR Studio helpers", () => {
       "#DDF8EC",
       "dots",
       "circle",
-      "data:image/png;base64,abc"
+      "data:image/png;base64,abc",
+      "#39C993",
+      "Scan Me",
+      "bold"
     );
     expect(svg).toContain("<circle");
     expect(svg).toContain('href="data:image/png;base64,abc"');
     expect(svg).toContain('fill="#DDF8EC"');
+    expect(svg).toContain("qr-foreground-gradient");
+    expect(svg).toContain(">Scan Me</text>");
   });
 
   it("embeds a central logo in SVG exports when provided", () => {

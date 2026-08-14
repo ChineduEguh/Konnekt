@@ -1667,3 +1667,69 @@ textarea::placeholder {
   border-color: #67b9e7 !important;
   color: #ffffff !important;
 }
+
+/* QR frames and final dark-mode surface contrast guardrails */
+.qr-custom-frame {
+  border: 2px solid;
+  background: rgba(255, 255, 255, 0.96);
+}
+.qr-custom-frame.frame-minimal {
+  border-radius: 18px;
+}
+.qr-custom-frame.frame-pill {
+  border-radius: 34px;
+  padding: 16px;
+}
+.qr-custom-frame.frame-bold {
+  border-width: 5px;
+  border-radius: 8px;
+  padding: 10px;
+}
+.dark .workspace-switcher,
+.dark .workspace-switcher *,
+.dark .app-sidebar,
+.dark .app-sidebar *,
+.dark .metric-card,
+.dark .metric-card *,
+.dark .create-card,
+.dark .create-card *,
+.dark .links-card,
+.dark .links-card *,
+.dark .activity-card,
+.dark .activity-card *,
+.dark .mobile-menu,
+.dark .mobile-close,
+.dark .qr-studio-controls,
+.dark .qr-studio-controls *,
+.dark .qr-custom-frame {
+  color: var(--dark-body) !important;
+}
+.dark .workspace-switcher strong,
+.dark .metric-card strong,
+.dark .create-card strong,
+.dark .links-card strong,
+.dark .activity-card strong,
+.dark .qr-studio-controls label,
+.dark .qr-studio-controls [data-slot="card-title"] {
+  color: var(--dark-heading) !important;
+}
+.dark .workspace-switcher,
+.dark .app-sidebar,
+.dark .metric-card,
+.dark .create-card,
+.dark .links-card,
+.dark .activity-card {
+  background: var(--dark-surface) !important;
+  border-color: var(--dark-border) !important;
+}
+.dark .workspace-switcher span,
+.dark .metric-card span,
+.dark .create-card span,
+.dark .links-card span,
+.dark .activity-card span,
+.dark .app-sidebar small {
+  color: var(--dark-muted) !important;
+}
+.dark .qr-custom-frame {
+  background: #f5fffa !important;
+}

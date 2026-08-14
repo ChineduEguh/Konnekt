@@ -462,6 +462,11 @@ export const appRouter = router({
             .string()
             .regex(/^#[0-9A-Fa-f]{6}$/)
             .default("#003D32"),
+          foregroundEndColor: z
+            .string()
+            .regex(/^#[0-9A-Fa-f]{6}$/)
+            .nullable()
+            .optional(),
           backgroundColor: z
             .string()
             .regex(/^#[0-9A-Fa-f]{6}$/)
@@ -471,6 +476,7 @@ export const appRouter = router({
             .enum(["square", "rounded", "circle"])
             .default("rounded"),
           frameLabel: z.string().max(80).optional(),
+          frameStyle: z.enum(["minimal", "pill", "bold"]).default("minimal"),
           logoDataUrl: z.string().max(2_000_000).optional(),
         })
       )

@@ -9,6 +9,7 @@ import {
   Palette,
   QrCode,
   Sparkles,
+  Share2,
   CheckCircle2,
   ExternalLink,
   FileText,
@@ -31,36 +32,42 @@ import { buildStyledQrSvg } from "../../../shared/qrSvg";
 
 type PatternStyle = "square" | "dots" | "rounded";
 type CornerStyle = "square" | "rounded" | "circle";
+type FrameStyle = "minimal" | "pill" | "bold";
 
 const qrThemes = [
   {
     id: "konnekt",
     label: "Konnekt Green",
     foreground: "#003D32",
+    foregroundEnd: "#39C993",
     background: "#DDF8EC",
   },
   {
     id: "midnight",
     label: "Midnight Blue",
     foreground: "#102A43",
+    foregroundEnd: "#2F80ED",
     background: "#E6F0FF",
   },
   {
     id: "coral",
     label: "Coral Signal",
     foreground: "#9B2C2C",
+    foregroundEnd: "#F2994A",
     background: "#FFF0EC",
   },
   {
     id: "violet",
     label: "Violet Studio",
     foreground: "#4C1D95",
+    foregroundEnd: "#A855F7",
     background: "#F3E8FF",
   },
   {
     id: "mono",
     label: "Classic Mono",
     foreground: "#111827",
+    foregroundEnd: "",
     background: "#FFFFFF",
   },
 ] as const;
@@ -71,7 +78,8 @@ function drawStyledQr(
   foreground: string,
   background: string,
   pattern: PatternStyle,
-  corner: CornerStyle
+  corner: CornerStyle,
+  foregroundEnd: string | null
 ) {
   const qr = QRCode.create(value, { errorCorrectionLevel: "H" });
   const modules = qr.modules;
@@ -85,7 +93,14 @@ function drawStyledQr(
   if (!context) return;
   context.fillStyle = background;
   context.fillRect(0, 0, size, size);
-  context.fillStyle = foreground;
+  const foregroundPaint = foregroundEnd
+    ? context.createLinearGradient(0, 0, size, size)
+    : foreground;
+  if (foregroundPaint instanceof CanvasGradient) {
+    foregroundPaint.addColorStop(0, foreground);
+    foregroundPaint.addColorStop(1, foregroundEnd as string);
+  }
+  context.fillStyle = foregroundPaint;
   const isFinder = (row: number, column: number) =>
     (row < 7 && column < 7) ||
     (row < 7 && column >= count - 7) ||
@@ -119,7 +134,7 @@ function drawStyledQr(
   const drawEye = (offsetX: number, offsetY: number) => {
     const x = quiet + offsetX * cell;
     const y = quiet + offsetY * cell;
-    context.fillStyle = foreground;
+    context.fillStyle = foregroundPaint;
     if (corner === "circle") {
       context.beginPath();
       context.arc(x + cell * 3.5, y + cell * 3.5, cell * 3.5, 0, Math.PI * 2);
@@ -133,7 +148,7 @@ function drawStyledQr(
     }
     context.fillStyle = background;
     context.fillRect(x + cell, y + cell, cell * 5, cell * 5);
-    context.fillStyle = foreground;
+    context.fillStyle = foregroundPaint;
     if (corner === "circle") {
       context.beginPath();
       context.arc(x + cell * 3.5, y + cell * 3.5, cell * 1.7, 0, Math.PI * 2);
@@ -158,11 +173,13 @@ export default function QrStudio() {
   const [destinationTested, setDestinationTested] = useState(false);
   const [name, setName] = useState("Campaign QR");
   const [foregroundColor, setForegroundColor] = useState("#003D32");
+  const [foregroundEndColor, setForegroundEndColor] = useState("");
   const [backgroundColor, setBackgroundColor] = useState("#DDF8EC");
   const [shape, setShape] = useState<PatternStyle>("rounded");
   const [cornerStyle, setCornerStyle] = useState<CornerStyle>("rounded");
   const [themeId, setThemeId] = useState("konnekt");
   const [frameLabel, setFrameLabel] = useState("SCAN TO CONNECT");
+  const [frameStyle, setFrameStyle] = useState<FrameStyle>("minimal");
   const [fontFamily, setFontFamily] = useState("Space Grotesk");
   const [creativeName, setCreativeName] = useState("");
   const [creativeUrl, setCreativeUrl] = useState("");
@@ -224,7 +241,8 @@ export default function QrStudio() {
         foregroundColor,
         backgroundColor,
         shape,
-        cornerStyle
+        cornerStyle,
+        foregroundEndColor || null
       );
       if (!logoDataUrl) return setPreview(canvas.toDataURL("image/png"));
       const image = new Image();
@@ -255,6 +273,7 @@ export default function QrStudio() {
   }, [
     target,
     foregroundColor,
+    foregroundEndColor,
     backgroundColor,
     shape,
     cornerStyle,
@@ -283,8 +302,95 @@ export default function QrStudio() {
     anchor.download = getQrExportFilename(name, extension);
     anchor.click();
   }
-  function downloadPng() {
-    if (preview) triggerDownload(preview, "png");
+  function createFramedExportCanvas(imageUrl: string) {
+    return new Promise<HTMLCanvasElement>((resolve, reject) => {
+      const canvas = document.createElement("canvas");
+      const size = 900;
+      const qrSize = 720;
+      const offset = 90;
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext("2d");
+      if (!context) return reject(new Error("Canvas export is unavailable"));
+      context.fillStyle = backgroundColor;
+      context.fillRect(0, 0, size, size);
+      const image = new Image();
+      image.onload = () => {
+        context.drawImage(image, offset, offset, qrSize, qrSize);
+        context.strokeStyle = foregroundColor;
+        context.lineWidth = frameStyle === "bold" ? 18 : 8;
+        const inset =
+          frameStyle === "pill" ? 20 : frameStyle === "bold" ? 12 : 28;
+        const radius =
+          frameStyle === "pill" ? 44 : frameStyle === "minimal" ? 28 : 12;
+        context.beginPath();
+        context.roundRect(
+          inset,
+          inset,
+          size - inset * 2,
+          size - inset * 2,
+          radius
+        );
+        context.stroke();
+        if (frameLabel.trim()) {
+          context.fillStyle = foregroundColor;
+          context.font = `${frameStyle === "pill" ? 26 : 21}px ${fontFamily}, sans-serif`;
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.fillText(frameLabel.trim(), size / 2, size - 42);
+        }
+        resolve(canvas);
+      };
+      image.onerror = () =>
+        reject(new Error("QR preview could not be exported"));
+      image.src = imageUrl;
+    });
+  }
+  async function downloadPng() {
+    if (!preview) return;
+    try {
+      const canvas = await createFramedExportCanvas(preview);
+      triggerDownload(canvas.toDataURL("image/png"), "png");
+    } catch {
+      toast.error("The QR image could not be exported");
+    }
+  }
+  async function shareQr() {
+    if (!preview) return toast.error("Create a QR preview before sharing");
+    try {
+      const framedCanvas = await createFramedExportCanvas(preview);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        framedCanvas.toBlob(
+          value =>
+            value
+              ? resolve(value)
+              : reject(new Error("Unable to create share image")),
+          "image/png"
+        )
+      );
+      const file = new File([blob], getQrExportFilename(name, "png"), {
+        type: "image/png",
+      });
+      if (
+        navigator.share &&
+        (!navigator.canShare || navigator.canShare({ files: [file] }))
+      ) {
+        await navigator.share({
+          title: name || "Konnekt QR code",
+          text: frameLabel || "Scan this QR code",
+          files: [file],
+        });
+        return;
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+    }
+    await navigator.clipboard?.writeText(target).catch(() => undefined);
+    const shareText = `${frameLabel || "Scan this QR code"}\n${target}`;
+    const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+    window.open(xUrl, "_blank", "noopener,noreferrer");
+    window.location.href = `mailto:?subject=${encodeURIComponent(name || "Konnekt QR code")}&body=${encodeURIComponent(shareText)}`;
+    toast.success("Social share and email options opened");
   }
   async function downloadSvg() {
     const qr = QRCode.create(target, { errorCorrectionLevel: "H" });
@@ -299,23 +405,21 @@ export default function QrStudio() {
       backgroundColor,
       shape,
       cornerStyle,
-      logoDataUrl
+      logoDataUrl,
+      foregroundEndColor || null,
+      frameLabel,
+      frameStyle
     );
     triggerDownload(
       `data:image/svg+xml;charset=utf-8,${encodeURIComponent(withLogo)}`,
       "svg"
     );
   }
-  function downloadPdf() {
+  async function downloadPdf() {
     if (!preview) return;
-    const jpegUrl = document.createElement("canvas");
-    jpegUrl.width = 720;
-    jpegUrl.height = 720;
-    const context = jpegUrl.getContext("2d");
-    const image = new Image();
-    image.onload = () => {
-      context?.drawImage(image, 0, 0, 720, 720);
-      const jpeg = jpegUrl.toDataURL("image/jpeg", 0.92);
+    try {
+      const framedCanvas = await createFramedExportCanvas(preview);
+      const jpeg = framedCanvas.toDataURL("image/jpeg", 0.92);
       const binary = atob(jpeg.split(",")[1]);
       const imageBytes = Uint8Array.from(binary, char => char.charCodeAt(0));
       const encoder = new TextEncoder();
@@ -357,18 +461,21 @@ export default function QrStudio() {
         URL.createObjectURL(new Blob(chunks, { type: "application/pdf" })),
         "pdf"
       );
-    };
-    image.src = preview;
+    } catch {
+      toast.error("The QR PDF could not be exported");
+    }
   }
   function loadQrAsset(qr: NonNullable<typeof qrList.data>[number]) {
     setName(qr.name);
     setLinkId(qr.smartLinkId ?? null);
     setManualUrl(qr.destinationUrl ?? "");
     setForegroundColor(qr.foregroundColor);
+    setForegroundEndColor(qr.foregroundEndColor ?? "");
     setBackgroundColor(qr.backgroundColor);
     setShape(qr.shape as PatternStyle);
     setCornerStyle(qr.cornerStyle as CornerStyle);
     setFrameLabel(qr.frameLabel ?? "SCAN TO CONNECT");
+    setFrameStyle(qr.frameStyle as FrameStyle);
     setLogoDataUrl(qr.logoUrl ?? "");
     setLogoName(qr.logoUrl ? "Saved centre logo" : "");
     setDestinationTested(false);
@@ -508,6 +615,7 @@ export default function QrStudio() {
                     setThemeId(e.target.value);
                     if (theme) {
                       setForegroundColor(theme.foreground);
+                      setForegroundEndColor(theme.foregroundEnd);
                       setBackgroundColor(theme.background);
                     }
                   }}
@@ -522,7 +630,7 @@ export default function QrStudio() {
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <label className="block text-xs font-semibold text-slate-600">
-                  Foreground
+                  Foreground start
                   <input
                     className="mt-1 h-10 w-full cursor-pointer rounded-md border border-slate-200 bg-white p-1"
                     type="color"
@@ -530,6 +638,18 @@ export default function QrStudio() {
                     onChange={e => {
                       setThemeId("custom");
                       setForegroundColor(e.target.value);
+                    }}
+                  />
+                </label>
+                <label className="block text-xs font-semibold text-slate-600">
+                  Foreground end
+                  <input
+                    className="mt-1 h-10 w-full cursor-pointer rounded-md border border-slate-200 bg-white p-1"
+                    type="color"
+                    value={foregroundEndColor || foregroundColor}
+                    onChange={e => {
+                      setThemeId("custom");
+                      setForegroundEndColor(e.target.value);
                     }}
                   />
                 </label>
@@ -546,6 +666,10 @@ export default function QrStudio() {
                   />
                 </label>
               </div>
+              <p className="text-[11px] font-normal text-slate-400">
+                Set the end colour to the same value as the start colour for a
+                solid brand colour.
+              </p>
               <label className="block text-xs font-semibold text-slate-600">
                 Pattern style
                 <select
@@ -593,6 +717,18 @@ export default function QrStudio() {
                   PNG, JPEG, or WebP. The logo is placed in a
                   high-error-correction centre panel.
                 </span>
+              </label>
+              <label className="block text-xs font-semibold text-slate-600">
+                Custom frame
+                <select
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  value={frameStyle}
+                  onChange={e => setFrameStyle(e.target.value as FrameStyle)}
+                >
+                  <option value="minimal">Minimal frame</option>
+                  <option value="pill">Pill frame</option>
+                  <option value="bold">Bold frame</option>
+                </select>
               </label>
               <label className="block text-xs font-semibold text-slate-600">
                 Font style
@@ -653,9 +789,11 @@ export default function QrStudio() {
                       name,
                       foregroundColor,
                       backgroundColor,
+                      foregroundEndColor: foregroundEndColor || undefined,
                       shape,
                       cornerStyle,
                       frameLabel,
+                      frameStyle,
                       logoDataUrl: logoDataUrl || undefined,
                     })
                   }
@@ -685,6 +823,14 @@ export default function QrStudio() {
                   onClick={downloadPdf}
                 >
                   <FileText size={15} /> PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={!preview}
+                  className="rounded-full"
+                  onClick={() => void shareQr()}
+                >
+                  <Share2 size={15} /> Share
                 </Button>
               </div>
             </CardContent>
@@ -726,16 +872,23 @@ export default function QrStudio() {
                   <span className="qr-device-label">
                     {previewMode === "mobile" ? "Mobile view" : "Desktop view"}
                   </span>
-                  <img
-                    src={preview}
-                    alt={`QR code for ${manualUrl.trim() || selected?.slug || "Konnekt destination"}`}
-                    className={`h-64 w-64 ${shape === "rounded" ? "rounded-3xl" : shape === "dots" ? "rounded-full" : ""}`}
-                  />
                   <div
-                    className="mt-3 text-center font-mono text-[10px] font-semibold tracking-[.16em]"
-                    style={{ color: foregroundColor, fontFamily }}
+                    className={`qr-custom-frame frame-${frameStyle} rounded-2xl p-3`}
+                    style={{ borderColor: foregroundColor }}
                   >
-                    {frameLabel}
+                    <img
+                      src={preview}
+                      alt={`QR code for ${manualUrl.trim() || selected?.slug || "Konnekt destination"}`}
+                      className={`h-64 w-64 ${shape === "rounded" ? "rounded-3xl" : shape === "dots" ? "rounded-full" : ""}`}
+                    />
+                    {frameLabel.trim() ? (
+                      <div
+                        className="mt-3 text-center font-mono text-[10px] font-semibold tracking-[.16em]"
+                        style={{ color: foregroundColor, fontFamily }}
+                      >
+                        {frameLabel}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>

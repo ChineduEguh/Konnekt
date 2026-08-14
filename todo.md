@@ -99,3 +99,8 @@
 - [x] Add editable custom names or labels for saved QR history items
 - [x] Add tests, responsive verification, documentation, checkpoint, and GitHub or managed deployment synchronization for the QR Studio styling enhancement
 - [x] Apply selected pattern and corner-eye styles to SVG exports and add styled-export coverage
+- [x] Fix dark-mode contrast regression across workspace overview, smart-link cards, tabs, controls, mobile overlays, and related product surfaces
+- [x] Add a QR Studio Share button beside the download options for image sharing through native share or email and social fallback
+- [x] Add gradient foreground branding options for generated QR codes and align preview and exports
+- [x] Add a custom QR frame and CTA text option such as Scan Me and include it in preview and downloads
+- [x] Add tests, responsive verification, documentation, checkpoint, and GitHub or managed deployment synchronization for this enhancement

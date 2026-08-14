@@ -179,6 +179,7 @@ export const qrCodes = mysqlTable("qrCodes", {
   foregroundColor: varchar("foregroundColor", { length: 16 })
     .default("#003D32")
     .notNull(),
+  foregroundEndColor: varchar("foregroundEndColor", { length: 16 }),
   backgroundColor: varchar("backgroundColor", { length: 16 })
     .default("#DDF8EC")
     .notNull(),
@@ -189,6 +190,9 @@ export const qrCodes = mysqlTable("qrCodes", {
     .default("rounded")
     .notNull(),
   frameLabel: varchar("frameLabel", { length: 80 }),
+  frameStyle: mysqlEnum("frameStyle", ["minimal", "pill", "bold"])
+    .default("minimal")
+    .notNull(),
   logoUrl: text("logoUrl"),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
