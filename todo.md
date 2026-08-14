@@ -56,4 +56,10 @@
 - [x] Optimize Analytics dashboard mobile layout and touch targets
 - [x] Optimize QR Studio mobile layout and touch targets
 - [x] Verify QR Studio live preview accurately reflects uploaded custom logos before save and download
-- [ ] Validate, document, checkpoint, commit to GitHub, and attempt the linked Vercel update for this UX milestone
+- [x] Validate, document, checkpoint, commit to GitHub, and attempt the linked Vercel update for this UX milestone
+- [x] Add a visible QR scan line chart over the selected analytics date range
+- [x] Add QR Studio pattern and background brand colour customization controls
+- [x] Add real-time attendee search and status filters to event check-in
+- [x] Add font customization controls to Event and QR Studio creative settings
+- [x] Add image and video creative import controls to Event and QR Studio
+- [x] Validate responsive behavior, add tests and documentation, checkpoint, and publish source updates

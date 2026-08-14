@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   Download,
   Link2,
+  Search,
   Loader2,
   Mail,
   MapPin,
@@ -29,6 +30,13 @@ export default function Events() {
   const { isAuthenticated, loading } = useAuth();
   const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
   const [checkInCode, setCheckInCode] = useState("");
+  const [attendeeSearch, setAttendeeSearch] = useState("");
+  const [attendeeStatus, setAttendeeStatus] = useState<
+    "all" | "registered" | "checked_in"
+  >("all");
+  const [eventFont, setEventFont] = useState("Space Grotesk");
+  const [eventCreativeName, setEventCreativeName] = useState("");
+  const [eventCreativeUrl, setEventCreativeUrl] = useState("");
   const [form, setForm] = useState({
     title: "",
     venue: "",
@@ -163,7 +171,7 @@ export default function Events() {
         </div>
         <div className="grid gap-5 lg:grid-cols-[.8fr_1.2fr]">
           <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
-            <CardHeader>
+            <CardHeader style={{ fontFamily: eventFont }}>
               <CardTitle className="flex items-center gap-2 text-[#003d32]">
                 <Plus size={18} /> Create an event
               </CardTitle>
@@ -213,8 +221,61 @@ export default function Events() {
                   />
                 </label>
               </div>
+              <label className="block text-xs font-semibold text-slate-600">
+                Event font
+                <select
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  value={eventFont}
+                  onChange={e => setEventFont(e.target.value)}
+                >
+                  <option>Space Grotesk</option>
+                  <option>Inter</option>
+                  <option>DM Sans</option>
+                  <option>Georgia</option>
+                </select>
+              </label>
+              <label className="block text-xs font-semibold text-slate-600">
+                Image or video creative
+                <Input
+                  className="mt-1"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 8 * 1024 * 1024)
+                      return toast.error("Creative must be smaller than 8 MB");
+                    setEventCreativeName(file.name);
+                    setEventCreativeUrl(URL.createObjectURL(file));
+                  }}
+                />
+                <span className="mt-1 block text-[11px] font-normal text-slate-400">
+                  Optional event creative preview. Uploads remain local until
+                  storage is connected.
+                </span>
+              </label>
+              {eventCreativeUrl ? (
+                <div className="overflow-hidden rounded-xl border border-[#dfe9e4] bg-white">
+                  {eventCreativeName.match(/\.(mp4|webm)$/i) ? (
+                    <video
+                      src={eventCreativeUrl}
+                      controls
+                      className="max-h-40 w-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={eventCreativeUrl}
+                      alt={eventCreativeName}
+                      className="max-h-40 w-full object-cover"
+                    />
+                  )}
+                  <p className="truncate px-3 py-2 text-xs text-slate-500">
+                    {eventCreativeName}
+                  </p>
+                </div>
+              ) : null}
               <Button
-                className="w-full rounded-full bg-[#003d32] hover:bg-[#0b6b4f]"
+                className="w-full rounded-full bg-[#003d32] text-white hover:bg-[#0b6b4f]"
                 disabled={
                   !form.title || !form.startsAt || createEvent.isPending
                 }
@@ -248,7 +309,10 @@ export default function Events() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <strong className="block text-base text-[#003d32]">
+                        <strong
+                          className="block text-base text-[#003d32]"
+                          style={{ fontFamily: eventFont }}
+                        >
                           {event.title}
                         </strong>
                         <span className="mt-1 flex items-center gap-1 text-xs text-slate-500">
@@ -403,53 +467,92 @@ export default function Events() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {registrations.data?.length ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="border-b text-xs text-slate-500">
-                        <tr>
-                          <th className="pb-3">Attendee</th>
-                          <th className="pb-3">Ticket</th>
-                          <th className="pb-3">Status</th>
-                          <th className="pb-3">Registered</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {registrations.data.map(row => (
-                          <tr key={row.id} className="border-b last:border-0">
-                            <td className="py-3">
-                              <strong>{row.attendeeName}</strong>
-                              <span className="block text-xs text-slate-500">
-                                {row.attendeeEmail}
-                              </span>
-                            </td>
-                            <td className="py-3 font-mono text-xs">
-                              {row.ticketCode}
-                            </td>
-                            <td className="py-3">
-                              <Badge
-                                className={
-                                  row.status === "checked_in"
-                                    ? "bg-[#ddf8ec] text-[#087443] hover:bg-[#ddf8ec]"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-100"
-                                }
-                              >
-                                {row.status.replaceAll("_", " ")}
-                              </Badge>
-                            </td>
-                            <td className="py-3 text-xs text-slate-500">
-                              {new Date(row.registeredAt).toLocaleString()}
-                            </td>
+                <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_180px]">
+                  <label className="relative block">
+                    <Search
+                      size={16}
+                      className="absolute left-3 top-3 text-slate-400"
+                    />
+                    <Input
+                      className="pl-9"
+                      value={attendeeSearch}
+                      onChange={e => setAttendeeSearch(e.target.value)}
+                      placeholder="Search name, email, phone, or ticket"
+                    />
+                  </label>
+                  <select
+                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                    value={attendeeStatus}
+                    onChange={e =>
+                      setAttendeeStatus(e.target.value as typeof attendeeStatus)
+                    }
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="registered">Registered</option>
+                    <option value="checked_in">Checked in</option>
+                  </select>
+                </div>
+                {(() => {
+                  const needle = attendeeSearch.trim().toLowerCase();
+                  const filtered = (registrations.data || []).filter(row => {
+                    const matchesStatus =
+                      attendeeStatus === "all" || row.status === attendeeStatus;
+                    const haystack =
+                      `${row.attendeeName} ${row.attendeeEmail} ${row.attendeePhone || ""} ${row.ticketCode}`.toLowerCase();
+                    return (
+                      matchesStatus && (!needle || haystack.includes(needle))
+                    );
+                  });
+                  return registrations.data?.length ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="border-b text-xs text-slate-500">
+                          <tr>
+                            <th className="pb-3">Attendee</th>
+                            <th className="pb-3">Ticket</th>
+                            <th className="pb-3">Status</th>
+                            <th className="pb-3">Registered</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="py-8 text-center text-sm text-slate-500">
-                    No attendees registered for this event yet.
-                  </p>
-                )}
+                        </thead>
+                        <tbody>
+                          {filtered.map(row => (
+                            <tr key={row.id} className="border-b last:border-0">
+                              <td className="py-3">
+                                <strong>{row.attendeeName}</strong>
+                                <span className="block text-xs text-slate-500">
+                                  {row.attendeeEmail}
+                                </span>
+                              </td>
+                              <td className="py-3 font-mono text-xs">
+                                {row.ticketCode}
+                              </td>
+                              <td className="py-3">
+                                <Badge
+                                  className={
+                                    row.status === "checked_in"
+                                      ? "bg-[#ddf8ec] text-[#087443] hover:bg-[#ddf8ec]"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-100"
+                                  }
+                                >
+                                  {row.status.replaceAll("_", " ")}
+                                </Badge>
+                              </td>
+                              <td className="py-3 text-xs text-slate-500">
+                                {new Date(row.registeredAt).toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-sm text-slate-500">
+                      {needle || attendeeStatus !== "all"
+                        ? "No attendees match these filters."
+                        : "No attendees registered for this event yet."}
+                    </p>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>
