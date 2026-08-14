@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   Download,
   Link2,
+  Share2,
   Search,
   Loader2,
   Mail,
@@ -86,6 +87,19 @@ export default function Events() {
           : e.message
       ),
   });
+  async function shareEvent(eventId: number, title: string) {
+    const url = `${window.location.origin}/events/${eventId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: `Register for ${title}`, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Public event link copied");
+    } catch {
+      toast.error("Could not share the event link");
+    }
+  }
   function downloadAttendees() {
     const rows = registrations.data || [];
     const escape = (value: unknown) =>
@@ -350,216 +364,250 @@ export default function Events() {
           </Card>
         </div>
         {selectedEvent && (
-          <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
-            <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[#003d32]">
-                  <UserPlus size={18} /> Register attendee
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  placeholder="Full name"
-                  value={attendee.name}
-                  onChange={e =>
-                    setAttendee({ ...attendee, name: e.target.value })
-                  }
-                />
-                <Input
-                  type="email"
-                  placeholder="Email address"
-                  value={attendee.email}
-                  onChange={e =>
-                    setAttendee({ ...attendee, email: e.target.value })
-                  }
-                />
-                <Input
-                  placeholder="Phone number"
-                  value={attendee.phone}
-                  onChange={e =>
-                    setAttendee({ ...attendee, phone: e.target.value })
-                  }
-                />
-                <Button
-                  className="rounded-full bg-[#e46f2e] hover:bg-[#c95f25]"
-                  disabled={
-                    !attendee.name || !attendee.email || register.isPending
-                  }
-                  onClick={() =>
-                    register.mutate({
-                      eventId: selectedEvent,
-                      workspaceId: workspace.data!.id,
-                      attendeeName: attendee.name,
-                      attendeeEmail: attendee.email,
-                      attendeePhone: attendee.phone || undefined,
-                    })
-                  }
-                >
-                  <Ticket size={15} /> Issue QR ticket
-                </Button>
-              </CardContent>
-            </Card>
-            {ticketQr && (
+          <>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#dfe9e4] bg-white p-4">
+              <div>
+                <p className="text-sm font-semibold text-[#003d32]">
+                  Public registration link
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Share this URL so guests can register without signing in.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => {
+                  const selected = events.data?.find(
+                    item => item.id === selectedEvent
+                  );
+                  if (selected) void shareEvent(selected.id, selected.title);
+                }}
+              >
+                <Share2 size={15} /> Share event
+              </Button>
+            </div>
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
               <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-[#003d32]">
-                    <Ticket size={18} /> Ticket QR
+                    <UserPlus size={18} /> Register attendee
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <img
-                    src={ticketQr.dataUrl}
-                    alt={`Ticket ${ticketQr.code}`}
-                    className="mx-auto h-44 w-44 rounded-xl"
-                  />
-                  <p className="mt-3 font-mono text-xs text-slate-500">
-                    {ticketQr.code}
-                  </p>
-                  <a
-                    className="mt-3 inline-flex items-center rounded-full bg-[#003d32] px-4 py-2 text-xs font-semibold text-white"
-                    href={ticketQr.dataUrl}
-                    download={`${ticketQr.code}.png`}
-                  >
-                    <Download size={14} className="mr-1" /> Download ticket QR
-                  </a>
-                </CardContent>
-              </Card>
-            )}
-            <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[#003d32]">
-                  <ScanLine size={18} /> Check in attendee
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-slate-500">
-                  Enter the ticket code from the guest QR ticket. Repeated scans
-                  are safely rejected.
-                </p>
-                <div className="flex gap-2">
+                <CardContent className="space-y-4">
                   <Input
-                    value={checkInCode}
-                    onChange={e => setCheckInCode(e.target.value.toUpperCase())}
-                    placeholder="KNT-XXXXXXXXXXXX"
+                    placeholder="Full name"
+                    value={attendee.name}
+                    onChange={e =>
+                      setAttendee({ ...attendee, name: e.target.value })
+                    }
+                  />
+                  <Input
+                    type="email"
+                    placeholder="Email address"
+                    value={attendee.email}
+                    onChange={e =>
+                      setAttendee({ ...attendee, email: e.target.value })
+                    }
+                  />
+                  <Input
+                    placeholder="Phone number"
+                    value={attendee.phone}
+                    onChange={e =>
+                      setAttendee({ ...attendee, phone: e.target.value })
+                    }
                   />
                   <Button
-                    className="rounded-full bg-[#003d32]"
-                    disabled={!checkInCode || checkIn.isPending}
-                    onClick={() => checkIn.mutate({ ticketCode: checkInCode })}
-                  >
-                    <CheckCircle2 size={15} /> Check in
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-[#dfe9e4] shadow-sm lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[#003d32]">
-                  <Users size={18} /> Attendee list{" "}
-                  <Badge variant="outline" className="ml-1 rounded-full">
-                    {registrations.data?.length || 0}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="ml-auto rounded-full"
-                    disabled={!registrations.data?.length}
-                    onClick={downloadAttendees}
-                  >
-                    <Download size={14} /> Export CSV
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_180px]">
-                  <label className="relative block">
-                    <Search
-                      size={16}
-                      className="absolute left-3 top-3 text-slate-400"
-                    />
-                    <Input
-                      className="pl-9"
-                      value={attendeeSearch}
-                      onChange={e => setAttendeeSearch(e.target.value)}
-                      placeholder="Search name, email, phone, or ticket"
-                    />
-                  </label>
-                  <select
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-                    value={attendeeStatus}
-                    onChange={e =>
-                      setAttendeeStatus(e.target.value as typeof attendeeStatus)
+                    className="rounded-full bg-[#e46f2e] hover:bg-[#c95f25]"
+                    disabled={
+                      !attendee.name || !attendee.email || register.isPending
+                    }
+                    onClick={() =>
+                      register.mutate({
+                        eventId: selectedEvent,
+                        workspaceId: workspace.data!.id,
+                        attendeeName: attendee.name,
+                        attendeeEmail: attendee.email,
+                        attendeePhone: attendee.phone || undefined,
+                      })
                     }
                   >
-                    <option value="all">All statuses</option>
-                    <option value="registered">Registered</option>
-                    <option value="checked_in">Checked in</option>
-                  </select>
-                </div>
-                {(() => {
-                  const needle = attendeeSearch.trim().toLowerCase();
-                  const filtered = (registrations.data || []).filter(row => {
-                    const matchesStatus =
-                      attendeeStatus === "all" || row.status === attendeeStatus;
-                    const haystack =
-                      `${row.attendeeName} ${row.attendeeEmail} ${row.attendeePhone || ""} ${row.ticketCode}`.toLowerCase();
-                    return (
-                      matchesStatus && (!needle || haystack.includes(needle))
-                    );
-                  });
-                  return registrations.data?.length ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="border-b text-xs text-slate-500">
-                          <tr>
-                            <th className="pb-3">Attendee</th>
-                            <th className="pb-3">Ticket</th>
-                            <th className="pb-3">Status</th>
-                            <th className="pb-3">Registered</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filtered.map(row => (
-                            <tr key={row.id} className="border-b last:border-0">
-                              <td className="py-3">
-                                <strong>{row.attendeeName}</strong>
-                                <span className="block text-xs text-slate-500">
-                                  {row.attendeeEmail}
-                                </span>
-                              </td>
-                              <td className="py-3 font-mono text-xs">
-                                {row.ticketCode}
-                              </td>
-                              <td className="py-3">
-                                <Badge
-                                  className={
-                                    row.status === "checked_in"
-                                      ? "bg-[#ddf8ec] text-[#087443] hover:bg-[#ddf8ec]"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-100"
-                                  }
-                                >
-                                  {row.status.replaceAll("_", " ")}
-                                </Badge>
-                              </td>
-                              <td className="py-3 text-xs text-slate-500">
-                                {new Date(row.registeredAt).toLocaleString()}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="py-8 text-center text-sm text-slate-500">
-                      {needle || attendeeStatus !== "all"
-                        ? "No attendees match these filters."
-                        : "No attendees registered for this event yet."}
+                    <Ticket size={15} /> Issue QR ticket
+                  </Button>
+                </CardContent>
+              </Card>
+              {ticketQr && (
+                <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[#003d32]">
+                      <Ticket size={18} /> Ticket QR
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <img
+                      src={ticketQr.dataUrl}
+                      alt={`Ticket ${ticketQr.code}`}
+                      className="mx-auto h-44 w-44 rounded-xl"
+                    />
+                    <p className="mt-3 font-mono text-xs text-slate-500">
+                      {ticketQr.code}
                     </p>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-          </div>
+                    <a
+                      className="mt-3 inline-flex items-center rounded-full bg-[#003d32] px-4 py-2 text-xs font-semibold text-white"
+                      href={ticketQr.dataUrl}
+                      download={`${ticketQr.code}.png`}
+                    >
+                      <Download size={14} className="mr-1" /> Download ticket QR
+                    </a>
+                  </CardContent>
+                </Card>
+              )}
+              <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[#003d32]">
+                    <ScanLine size={18} /> Check in attendee
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-slate-500">
+                    Enter the ticket code from the guest QR ticket. Repeated
+                    scans are safely rejected.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={checkInCode}
+                      onChange={e =>
+                        setCheckInCode(e.target.value.toUpperCase())
+                      }
+                      placeholder="KNT-XXXXXXXXXXXX"
+                    />
+                    <Button
+                      className="rounded-full bg-[#003d32]"
+                      disabled={!checkInCode || checkIn.isPending}
+                      onClick={() =>
+                        checkIn.mutate({ ticketCode: checkInCode })
+                      }
+                    >
+                      <CheckCircle2 size={15} /> Check in
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-2xl border-[#dfe9e4] shadow-sm lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[#003d32]">
+                    <Users size={18} /> Attendee list{" "}
+                    <Badge variant="outline" className="ml-1 rounded-full">
+                      {registrations.data?.length || 0}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto rounded-full"
+                      disabled={!registrations.data?.length}
+                      onClick={downloadAttendees}
+                    >
+                      <Download size={14} /> Export CSV
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 grid gap-2 sm:grid-cols-[1fr_180px]">
+                    <label className="relative block">
+                      <Search
+                        size={16}
+                        className="absolute left-3 top-3 text-slate-400"
+                      />
+                      <Input
+                        className="pl-9"
+                        value={attendeeSearch}
+                        onChange={e => setAttendeeSearch(e.target.value)}
+                        placeholder="Search name, email, phone, or ticket"
+                      />
+                    </label>
+                    <select
+                      className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                      value={attendeeStatus}
+                      onChange={e =>
+                        setAttendeeStatus(
+                          e.target.value as typeof attendeeStatus
+                        )
+                      }
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="registered">Registered</option>
+                      <option value="checked_in">Checked in</option>
+                    </select>
+                  </div>
+                  {(() => {
+                    const needle = attendeeSearch.trim().toLowerCase();
+                    const filtered = (registrations.data || []).filter(row => {
+                      const matchesStatus =
+                        attendeeStatus === "all" ||
+                        row.status === attendeeStatus;
+                      const haystack =
+                        `${row.attendeeName} ${row.attendeeEmail} ${row.attendeePhone || ""} ${row.ticketCode}`.toLowerCase();
+                      return (
+                        matchesStatus && (!needle || haystack.includes(needle))
+                      );
+                    });
+                    return registrations.data?.length ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="border-b text-xs text-slate-500">
+                            <tr>
+                              <th className="pb-3">Attendee</th>
+                              <th className="pb-3">Ticket</th>
+                              <th className="pb-3">Status</th>
+                              <th className="pb-3">Registered</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filtered.map(row => (
+                              <tr
+                                key={row.id}
+                                className="border-b last:border-0"
+                              >
+                                <td className="py-3">
+                                  <strong>{row.attendeeName}</strong>
+                                  <span className="block text-xs text-slate-500">
+                                    {row.attendeeEmail}
+                                  </span>
+                                </td>
+                                <td className="py-3 font-mono text-xs">
+                                  {row.ticketCode}
+                                </td>
+                                <td className="py-3">
+                                  <Badge
+                                    className={
+                                      row.status === "checked_in"
+                                        ? "bg-[#ddf8ec] text-[#087443] hover:bg-[#ddf8ec]"
+                                        : "bg-slate-100 text-slate-600 hover:bg-slate-100"
+                                    }
+                                  >
+                                    {row.status.replaceAll("_", " ")}
+                                  </Badge>
+                                </td>
+                                <td className="py-3 text-xs text-slate-500">
+                                  {new Date(row.registeredAt).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="py-8 text-center text-sm text-slate-500">
+                        {needle || attendeeStatus !== "all"
+                          ? "No attendees match these filters."
+                          : "No attendees registered for this event yet."}
+                      </p>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </div>
+          </>
         )}
       </div>
     </div>

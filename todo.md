@@ -110,3 +110,9 @@
 - [x] Add clipboard TSV export success feedback, copied-data preview modal, and clipboard failure fallback
 - [x] Add current smart link and QR scan activity metrics to the Analytics dashboard
 - [x] Add tests, responsive verification, documentation, GitHub synchronization, and managed deployment checkpoint for this enhancement
+- [x] Make created events publicly shareable through a public event detail URL
+- [x] Add a public event registration form that creates attendee registrations without requiring workspace authentication
+- [x] Add public registration success, validation, capacity, duplicate, and error states
+- [x] Add Analytics smart-link and QR scan visual trend charts with date-range comparison filters
+- [x] Add Analytics trend indicators comparing the selected range with the preceding equivalent period
+- [x] Add tests, responsive verification, documentation, GitHub synchronization, and managed deployment checkpoint for this enhancement

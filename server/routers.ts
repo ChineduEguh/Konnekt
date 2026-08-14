@@ -21,12 +21,14 @@ import {
   getContactWorkspaceId,
   listWorkspaceContacts,
   getEventWorkspaceId,
+  getPublicEvent,
   getRegistrationWorkspaceId,
   getSmartLinkWorkspaceId,
   requireWorkspaceRole,
   setWorkspaceScheduleCronTaskUid,
   getWorkspaceSummary,
   getAnalyticsOverview,
+  getConnectionTrend,
   getOrCreateWhatsappConversation,
   createWhatsappMessage,
   listWhatsappMessages,
@@ -231,6 +233,9 @@ export const appRouter = router({
       }),
   }),
   events: router({
+    publicDetail: publicProcedure
+      .input(z.object({ eventId: z.number().int().positive() }))
+      .query(async ({ input }) => getPublicEvent(input.eventId)),
     list: protectedProcedure.query(async ({ ctx }) => {
       const workspace = await getOrCreateWorkspace(ctx.user);
       if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
@@ -422,6 +427,35 @@ export const appRouter = router({
         if (!workspace) throw new Error("Workspace could not be initialized");
         await requireWorkspaceRole(workspace.id, ctx.user.id);
         return getAnalyticsOverview(workspace.id, input?.from, input?.to);
+      }),
+    trends: protectedProcedure
+      .input(
+        z.object({
+          from: z.date(),
+          to: z.date(),
+          previousFrom: z.date(),
+          previousTo: z.date(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id);
+        const [current, previous] = await Promise.all([
+          getConnectionTrend(workspace.id, input.from, input.to),
+          getConnectionTrend(
+            workspace.id,
+            input.previousFrom,
+            input.previousTo
+          ),
+        ]);
+        const total = (rows: typeof current) =>
+          rows.reduce((sum, row) => sum + Number(row.count ?? 0), 0);
+        return {
+          current,
+          previous,
+          totals: { current: total(current), previous: total(previous) },
+        };
       }),
     qrScans: protectedProcedure
       .input(

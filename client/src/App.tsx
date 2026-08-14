@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
+import PublicEvent from "./pages/PublicEvent";
 import QrStudio from "./pages/QrStudio";
 import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/events" component={Events} />
+      <Route path="/events/:eventId" component={PublicEvent} />
       <Route path="/qr-studio" component={QrStudio} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/customers" component={Customers} />

@@ -485,6 +485,26 @@ export async function listWorkspaceEvents(workspaceId: number) {
     .limit(20);
 }
 
+export async function getPublicEvent(eventId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select({
+      event: events,
+      registrationCount: sql<number>`count(${eventRegistrations.id})`,
+    })
+    .from(events)
+    .leftJoin(eventRegistrations, eq(eventRegistrations.eventId, events.id))
+    .where(and(eq(events.id, eventId), eq(events.status, "published")))
+    .groupBy(events.id)
+    .limit(1);
+  if (!rows[0]) return undefined;
+  return {
+    ...rows[0].event,
+    registrationCount: Number(rows[0].registrationCount ?? 0),
+  };
+}
+
 export async function createWorkspaceEvent(input: typeof events.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -517,12 +537,29 @@ export async function registerAttendee(
       capacity: events.capacity,
       workspaceId: events.workspaceId,
       title: events.title,
+      status: events.status,
     })
     .from(events)
     .where(eq(events.id, input.eventId))
     .limit(1);
   const event = eventRows[0];
   if (!event) throw new Error("Event not found");
+  if (event.status !== "published")
+    throw new Error("Event is not open for registration");
+  if (event.workspaceId !== input.workspaceId)
+    throw new Error("Event registration target mismatch");
+  const [duplicate] = await db
+    .select({ id: eventRegistrations.id })
+    .from(eventRegistrations)
+    .where(
+      and(
+        eq(eventRegistrations.eventId, input.eventId),
+        eq(eventRegistrations.attendeeEmail, input.attendeeEmail),
+        eq(eventRegistrations.status, "registered")
+      )
+    )
+    .limit(1);
+  if (duplicate) throw new Error("Duplicate registration");
   const [registered] = await db
     .select({ count: sql<number>`count(*)` })
     .from(eventRegistrations)
@@ -594,6 +631,31 @@ export async function checkInRegistration(ticketCode: string) {
       checkedInAt: new Date(),
     },
   };
+}
+
+export async function getConnectionTrend(
+  workspaceId: number,
+  from?: Date,
+  to?: Date
+) {
+  const db = await getDb();
+  if (!db) return [];
+  const clauses = [eq(connectionEvents.workspaceId, workspaceId)];
+  if (from) clauses.push(sql`${connectionEvents.occurredAt} >= ${from}` as any);
+  if (to) clauses.push(sql`${connectionEvents.occurredAt} < ${to}` as any);
+  return db
+    .select({
+      day: sql<string>`DATE(${connectionEvents.occurredAt})`,
+      eventType: connectionEvents.eventType,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(connectionEvents)
+    .where(and(...clauses))
+    .groupBy(
+      sql`DATE(${connectionEvents.occurredAt})`,
+      connectionEvents.eventType
+    )
+    .orderBy(sql`DATE(${connectionEvents.occurredAt})`);
 }
 
 export async function getQrScanAnalytics(

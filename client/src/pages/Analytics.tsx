@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { scansToCsv, scansToTsv } from "@shared/export";
+import { calculateTrendPercent, mergeActivityTrend } from "@shared/analytics";
 import {
   Line,
   LineChart,
@@ -37,8 +38,13 @@ import {
 export default function Analytics() {
   const { isAuthenticated, loading } = useAuth();
   const [range, setRange] = useState(30);
+  const [compareEnabled, setCompareEnabled] = useState(true);
   const from = useMemo(() => new Date(Date.now() - range * 86400000), [range]);
   const to = useMemo(() => new Date(), []);
+  const previousFrom = useMemo(
+    () => new Date(from.getTime() - range * 86400000),
+    [from, range]
+  );
   const query = trpc.analytics.qrScans.useQuery(
     { from, to },
     { enabled: isAuthenticated }
@@ -50,12 +56,33 @@ export default function Analytics() {
   const workspaceSummary = trpc.workspace.summary.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const trends = trpc.analytics.trends.useQuery(
+    { from, to, previousFrom, previousTo: from },
+    { enabled: isAuthenticated }
+  );
   const [previewOpen, setPreviewOpen] = useState(false);
   const rows = (query.data || []).map(row => ({
     day: String(row.day),
     scans: Number(row.scans),
   }));
   const total = rows.reduce((sum, row) => sum + row.scans, 0);
+  const trendRows = useMemo(
+    () =>
+      mergeActivityTrend(
+        (trends.data?.current ?? []).map(row => ({
+          ...row,
+          day: String(row.day),
+          count: Number(row.count),
+        }))
+      ),
+    [trends.data?.current]
+  );
+  const currentTrendTotal = Number(trends.data?.totals.current ?? 0);
+  const previousTrendTotal = Number(trends.data?.totals.previous ?? 0);
+  const trendPercent = calculateTrendPercent(
+    currentTrendTotal,
+    previousTrendTotal
+  );
   function downloadCsv() {
     const blob = new Blob([scansToCsv(rows)], {
       type: "text/csv;charset=utf-8",
@@ -143,6 +170,17 @@ export default function Analytics() {
               <Download size={15} /> CSV
             </Button>
             <Button
+              variant={compareEnabled ? "default" : "outline"}
+              className={
+                compareEnabled
+                  ? "rounded-full bg-[#6b52bd] text-white hover:bg-[#58439f]"
+                  : "rounded-full"
+              }
+              onClick={() => setCompareEnabled(value => !value)}
+            >
+              Compare {range}d
+            </Button>
+            <Button
               className="rounded-full bg-[#003d32] text-white hover:bg-[#0b6b4f]"
               onClick={exportToGoogleSheets}
             >
@@ -197,17 +235,17 @@ export default function Analytics() {
         <Card className="mt-5 rounded-2xl border-[#dfe9e4] shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#003d32]">
-              <BarChart3 size={18} /> QR scans over time{" "}
+              <BarChart3 size={18} /> Smart-link and QR activity{" "}
               <Badge variant="outline" className="rounded-full">
-                {rows.length} active days
+                {trendRows.length} active days
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[360px] w-full">
-              {rows.length ? (
+              {trendRows.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={rows}>
+                  <LineChart data={trendRows}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5ece8" />
                     <XAxis
                       dataKey="day"
@@ -230,14 +268,24 @@ export default function Analytics() {
                         color: "#10221d",
                       }}
                       labelStyle={{ color: "#52635f", fontWeight: 600 }}
-                      formatter={(value: number | string) => [
-                        `${Number(value).toLocaleString()} scans`,
-                        "QR scans",
+                      formatter={(value: number | string, name: string) => [
+                        `${Number(value).toLocaleString()} events`,
+                        name === "clicks" ? "Smart-link clicks" : "QR scans",
                       ]}
                     />
                     <Line
                       type="monotone"
+                      dataKey="clicks"
+                      name="clicks"
+                      stroke="#6b52bd"
+                      strokeWidth={3}
+                      dot={{ r: 3, fill: "#6b52bd", strokeWidth: 0 }}
+                      activeDot={{ r: 6, fill: "#6b52bd" }}
+                    />
+                    <Line
+                      type="monotone"
                       dataKey="scans"
+                      name="scans"
                       stroke="#0b6b4f"
                       strokeWidth={3}
                       dot={{ r: 3, fill: "#e46f2e", strokeWidth: 0 }}
@@ -280,6 +328,46 @@ export default function Analytics() {
             </div>
           </CardContent>
         </Card>
+        {compareEnabled && (
+          <section className="mt-5 grid gap-4 sm:grid-cols-3">
+            <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+              <CardContent className="p-5">
+                <p className="eyebrow">ACTIVITY TREND</p>
+                <strong
+                  className={`mt-3 block font-[Space_Grotesk] text-3xl ${trendPercent >= 0 ? "text-[#0b6b4f]" : "text-[#b45309]"}`}
+                >
+                  {trendPercent >= 0 ? "+" : ""}
+                  {trendPercent.toFixed(1)}%
+                </strong>
+                <p className="mt-2 text-xs text-slate-500">
+                  Total activity versus the previous {range}-day period
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+              <CardContent className="p-5">
+                <p className="eyebrow">CURRENT PERIOD</p>
+                <strong className="mt-3 block font-[Space_Grotesk] text-3xl text-[#003d32]">
+                  {currentTrendTotal.toLocaleString()}
+                </strong>
+                <p className="mt-2 text-xs text-slate-500">
+                  Smart-link clicks and QR scans
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
+              <CardContent className="p-5">
+                <p className="eyebrow">PREVIOUS PERIOD</p>
+                <strong className="mt-3 block font-[Space_Grotesk] text-3xl text-[#003d32]">
+                  {previousTrendTotal.toLocaleString()}
+                </strong>
+                <p className="mt-2 text-xs text-slate-500">
+                  Equivalent preceding date range
+                </p>
+              </CardContent>
+            </Card>
+          </section>
+        )}
         <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="rounded-2xl border-[#dfe9e4] shadow-sm">
             <CardContent className="p-5">
