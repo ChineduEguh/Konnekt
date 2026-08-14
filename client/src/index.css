@@ -1424,3 +1424,246 @@ textarea::placeholder {
   background: #214f3e !important;
   color: #e6f7ef !important;
 }
+
+/* Final dark-mode readability layer */
+.dark {
+  --dark-page: #071a14;
+  --dark-surface: #102a21;
+  --dark-surface-raised: #17382d;
+  --dark-border: #467565;
+  --dark-border-strong: #639884;
+  --dark-heading: #f7fffb;
+  --dark-body: #d8eee5;
+  --dark-muted: #a9c8ba;
+  --dark-faint: #86aa9b;
+  --dark-accent: #39c993;
+  --dark-accent-strong: #77e0b5;
+  background: var(--dark-page) !important;
+  color: var(--dark-body) !important;
+}
+.dark body,
+.dark #root,
+.dark .app-shell,
+.dark .app-main,
+.dark .analytics-shell,
+.dark .events-shell,
+.dark .qr-studio-shell,
+.dark .marketing-shell {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: var(--dark-page) !important;
+  color: var(--dark-body) !important;
+}
+.dark .app-header,
+.dark .app-sidebar,
+.dark .chart-card,
+.dark .activity-card,
+.dark .create-card,
+.dark .links-card,
+.dark .analytics-empty,
+.dark .event-card,
+.dark .qr-studio-controls,
+.dark .qr-studio-preview,
+.dark [data-slot="card"] {
+  background: var(--dark-surface) !important;
+  border-color: var(--dark-border) !important;
+  color: var(--dark-body) !important;
+}
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark .app-header h1,
+.dark .analytics-shell h1,
+.dark .events-shell h1,
+.dark .qr-studio-shell h1,
+.dark [data-slot="card-title"],
+.dark .card-title,
+.dark strong,
+.dark label {
+  color: var(--dark-heading) !important;
+  text-shadow: none !important;
+}
+.dark p,
+.dark span,
+.dark li,
+.dark td,
+.dark th,
+.dark .text-slate-300,
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-slate-600,
+.dark .text-slate-700,
+.dark .text-slate-900,
+.dark .text-slate-950 {
+  color: var(--dark-body) !important;
+}
+.dark .eyebrow,
+.dark .section-kicker,
+.dark .workspace-label,
+.dark .qr-device-label,
+.dark .text-xs,
+.dark .text-sm.text-slate-500,
+.dark .text-slate-500 {
+  color: var(--dark-muted) !important;
+}
+.dark .text-slate-400 {
+  color: var(--dark-faint) !important;
+}
+.dark input,
+.dark select,
+.dark textarea,
+.dark [data-slot="input"],
+.dark [data-slot="textarea"] {
+  background: var(--dark-surface-raised) !important;
+  color: var(--dark-heading) !important;
+  border-color: var(--dark-border-strong) !important;
+  caret-color: var(--dark-accent-strong);
+}
+.dark input::placeholder,
+.dark textarea::placeholder,
+.dark select option {
+  color: var(--dark-muted) !important;
+  opacity: 1 !important;
+}
+.dark button,
+.dark a {
+  border-color: var(--dark-border) !important;
+}
+.dark button:not([disabled]),
+.dark a {
+  color: var(--dark-body);
+}
+.dark button[class*="bg-[#003d32]"],
+.dark button[class*="bg-[#0b6b4f]"],
+.dark button[class*="bg-[#e46f2e]"],
+.dark a[class*="bg-[#003d32]"],
+.dark a[class*="bg-[#0b6b4f]"],
+.dark a[class*="bg-[#e46f2e]"] {
+  background: #16845f !important;
+  color: #ffffff !important;
+  border-color: #4fd5a2 !important;
+}
+.dark button[class*="bg-[#003d32]"]:hover,
+.dark button[class*="bg-[#0b6b4f]"]:hover,
+.dark a[class*="bg-[#003d32]"]:hover,
+.dark a[class*="bg-[#0b6b4f]"]:hover {
+  background: #27a878 !important;
+  color: #ffffff !important;
+}
+.dark button:disabled {
+  background: #23483c !important;
+  color: #a7c5b8 !important;
+  border-color: #3c6758 !important;
+  opacity: 1 !important;
+}
+.dark [data-slot="badge"],
+.dark .page-header-badge,
+.dark .capability-chips span {
+  background: #245744 !important;
+  color: #edfff7 !important;
+  border-color: #5b997e !important;
+}
+.dark [data-slot="tabs-list"] {
+  background: #1a3c30 !important;
+  border-color: var(--dark-border) !important;
+}
+.dark [data-slot="tabs-trigger"] {
+  color: var(--dark-body) !important;
+}
+.dark [data-slot="tabs-trigger"][data-state="active"] {
+  background: #2a6e55 !important;
+  color: #ffffff !important;
+}
+.dark .preview-toggle {
+  background: #1a3c30 !important;
+  border-color: var(--dark-border-strong) !important;
+}
+.dark .preview-toggle button {
+  color: var(--dark-body) !important;
+}
+.dark .preview-toggle button.active {
+  background: #2b8e6c !important;
+  color: #ffffff !important;
+}
+.dark .theme-toggle,
+.dark .copy-link-button {
+  background: #245744 !important;
+  border-color: #6aa88d !important;
+  color: #ffffff !important;
+}
+.dark .theme-toggle:hover,
+.dark .copy-link-button:hover {
+  background: #2b8e6c !important;
+  color: #ffffff !important;
+}
+.dark .chart-grid-lines line,
+.dark .chart-grid-lines path {
+  stroke: #3c6254 !important;
+}
+.dark .chart-axis-label,
+.dark .chart-label {
+  fill: var(--dark-muted) !important;
+  color: var(--dark-muted) !important;
+}
+.dark .empty-state,
+.dark .analytics-empty,
+.dark .recent-signals-empty {
+  color: var(--dark-body) !important;
+}
+.dark .empty-state span,
+.dark .analytics-empty span {
+  color: var(--dark-muted) !important;
+}
+.dark .qr-device-frame {
+  border-color: #396755 !important;
+}
+@media (max-width: 640px) {
+  .dark .app-header,
+  .dark .analytics-actions,
+  .dark .qr-studio-header,
+  .dark .events-shell > div > div:first-child {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .dark .app-header h1,
+  .dark .analytics-shell h1,
+  .dark .events-shell h1,
+  .dark .qr-studio-shell h1 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .dark .chart-card,
+  .dark .activity-card {
+    overflow: hidden;
+  }
+  .dark .platform-strip > div,
+  .dark [data-slot="tabs-list"] {
+    scrollbar-color: #4e8f74 #17382d;
+  }
+}
+
+.dark .not-found-page {
+  background: var(--dark-page) !important;
+  color: var(--dark-body) !important;
+}
+.dark .not-found-card {
+  background: var(--dark-surface) !important;
+  border: 1px solid var(--dark-border) !important;
+  color: var(--dark-body) !important;
+}
+.dark .not-found-card h1,
+.dark .not-found-card h2 {
+  color: var(--dark-heading) !important;
+}
+.dark .not-found-card p {
+  color: var(--dark-body) !important;
+}
+.dark .not-found-card button[class*="bg-blue"] {
+  background: #176d9d !important;
+  border-color: #67b9e7 !important;
+  color: #ffffff !important;
+}

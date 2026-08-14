@@ -77,3 +77,6 @@
 - [x] Remove the prefilled elevationng.org custom-domain example and replace it with a neutral empty placeholder
 - [x] Make the light or dark mode toggle clearly visible at the top right on every authenticated app page
 - [x] Verify custom-domain displays and theme-toggle placement at mobile and desktop widths, then checkpoint the update
+- [x] Audit and fix dark-mode contrast across workspace, Analytics, QR Studio, Events, mobile overlays, tabs, charts, forms, badges, and page headers
+- [x] Remove dark-mode mobile overflow and clipped content visible in the workspace screenshot
+- [x] Verify dark-mode readability at mobile and desktop widths and checkpoint the regression fix
