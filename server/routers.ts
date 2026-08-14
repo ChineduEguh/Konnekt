@@ -33,6 +33,17 @@ const slugSchema = z
     "Use lowercase letters, numbers, and hyphens"
   );
 
+const normalizeDestination = (value: string) => {
+  const trimmed = value.trim();
+  const candidate = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  const parsed = new URL(candidate);
+  if (!parsed.hostname.includes("."))
+    throw new Error("Enter a valid domain such as google.com");
+  return parsed.toString();
+};
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -71,7 +82,8 @@ export const appRouter = router({
       .input(
         z.object({
           slug: slugSchema,
-          destinationUrl: z.string().url(),
+          destinationUrl: z.string().min(3).max(2000),
+          customDomain: z.string().min(3).max(255).optional(),
           utmSource: z.string().max(120).optional(),
           utmMedium: z.string().max(120).optional(),
           utmCampaign: z.string().max(120).optional(),
@@ -92,9 +104,15 @@ export const appRouter = router({
           !["owner", "admin", "member"].includes(membership.role)
         )
           throw new Error("Workspace access denied");
-        const { password, ...rest } = input;
+        const { password, destinationUrl, customDomain, ...rest } = input;
         return createWorkspaceLink({
           ...rest,
+          destinationUrl: normalizeDestination(destinationUrl),
+          customDomain:
+            customDomain
+              ?.replace(/^https?:\/\//i, "")
+              .replace(/\/$/, "")
+              .trim() || null,
           passwordHash: password
             ? createHash("sha256").update(password).digest("hex")
             : null,

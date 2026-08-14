@@ -37,11 +37,21 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
-  app.get("/r/:slug", async (req, res) => {
+  app.get(["/r/:slug", "/:slug"], async (req, res, next) => {
     const startedAt = performance.now();
+    const isRedirectPath = req.path.startsWith("/r/");
+    const slug = isRedirectPath ? req.params.slug : req.path.slice(1);
     try {
-      const link = await findLinkBySlug(req.params.slug);
-      if (!link) return res.status(404).json({ error: "connection-not-found" });
+      const link = await findLinkBySlug(slug);
+      if (!link)
+        return isRedirectPath
+          ? res.status(404).json({ error: "connection-not-found" })
+          : next();
+      const requestHost = String(req.hostname || "").toLowerCase();
+      const customHostMatches = Boolean(
+        link.customDomain && link.customDomain.toLowerCase() === requestHost
+      );
+      if (!isRedirectPath && !customHostMatches) return next();
       if (link.expiresAt && link.expiresAt.getTime() < Date.now())
         return res.status(410).json({ error: "connection-expired" });
       const destination = new URL(link.destinationUrl);

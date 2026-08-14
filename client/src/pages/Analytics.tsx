@@ -196,7 +196,20 @@ export default function Analytics() {
                       tickLine={false}
                       axisLine={false}
                     />
-                    <Tooltip />
+                    <Tooltip
+                      cursor={{ stroke: "#9dccba", strokeDasharray: "4 4" }}
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid #b7dfcf",
+                        background: "#ffffff",
+                        color: "#10221d",
+                      }}
+                      labelStyle={{ color: "#52635f", fontWeight: 600 }}
+                      formatter={(value: number | string) => [
+                        `${Number(value).toLocaleString()} scans`,
+                        "QR scans",
+                      ]}
+                    />
                     <Line
                       type="monotone"
                       dataKey="scans"
