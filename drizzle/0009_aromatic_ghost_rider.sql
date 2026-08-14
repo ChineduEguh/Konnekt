@@ -1,0 +1,1 @@
+ALTER TABLE `qrCodes` ADD `cornerStyle` enum('square','rounded','circle') DEFAULT 'rounded' NOT NULL;

@@ -185,6 +185,9 @@ export const qrCodes = mysqlTable("qrCodes", {
   shape: mysqlEnum("shape", ["square", "dots", "rounded"])
     .default("rounded")
     .notNull(),
+  cornerStyle: mysqlEnum("cornerStyle", ["square", "rounded", "circle"])
+    .default("rounded")
+    .notNull(),
   frameLabel: varchar("frameLabel", { length: 80 }),
   logoUrl: text("logoUrl"),
   active: boolean("active").default(true).notNull(),

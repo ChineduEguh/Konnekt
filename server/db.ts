@@ -744,6 +744,20 @@ export async function listWorkspaceQrCodes(workspaceId: number) {
     .limit(20);
 }
 
+export async function renameQrCode(
+  workspaceId: number,
+  qrId: number,
+  name: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db
+    .update(qrCodes)
+    .set({ name })
+    .where(and(eq(qrCodes.id, qrId), eq(qrCodes.workspaceId, workspaceId)));
+  return Number(result[0]?.affectedRows ?? 0) > 0;
+}
+
 export async function deleteQrCode(workspaceId: number, qrId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

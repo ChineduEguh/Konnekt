@@ -14,6 +14,7 @@ import {
   FileText,
   History,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -25,11 +26,126 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { normalizeHttpUrl } from "../../../shared/urls";
-import {
-  appendLogoToSvg,
-  canSaveQr,
-  getQrExportFilename,
-} from "../../../shared/qrStudio";
+import { canSaveQr, getQrExportFilename } from "../../../shared/qrStudio";
+import { buildStyledQrSvg } from "../../../shared/qrSvg";
+
+type PatternStyle = "square" | "dots" | "rounded";
+type CornerStyle = "square" | "rounded" | "circle";
+
+const qrThemes = [
+  {
+    id: "konnekt",
+    label: "Konnekt Green",
+    foreground: "#003D32",
+    background: "#DDF8EC",
+  },
+  {
+    id: "midnight",
+    label: "Midnight Blue",
+    foreground: "#102A43",
+    background: "#E6F0FF",
+  },
+  {
+    id: "coral",
+    label: "Coral Signal",
+    foreground: "#9B2C2C",
+    background: "#FFF0EC",
+  },
+  {
+    id: "violet",
+    label: "Violet Studio",
+    foreground: "#4C1D95",
+    background: "#F3E8FF",
+  },
+  {
+    id: "mono",
+    label: "Classic Mono",
+    foreground: "#111827",
+    background: "#FFFFFF",
+  },
+] as const;
+
+function drawStyledQr(
+  canvas: HTMLCanvasElement,
+  value: string,
+  foreground: string,
+  background: string,
+  pattern: PatternStyle,
+  corner: CornerStyle
+) {
+  const qr = QRCode.create(value, { errorCorrectionLevel: "H" });
+  const modules = qr.modules;
+  const count = modules.size;
+  const quiet = 48;
+  const size = 720;
+  const cell = (size - quiet * 2) / count;
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  context.fillStyle = background;
+  context.fillRect(0, 0, size, size);
+  context.fillStyle = foreground;
+  const isFinder = (row: number, column: number) =>
+    (row < 7 && column < 7) ||
+    (row < 7 && column >= count - 7) ||
+    (row >= count - 7 && column < 7);
+  const drawModule = (x: number, y: number) => {
+    if (pattern === "dots") {
+      context.beginPath();
+      context.arc(x + cell / 2, y + cell / 2, cell * 0.42, 0, Math.PI * 2);
+      context.fill();
+    } else if (pattern === "rounded") {
+      context.beginPath();
+      context.roundRect(
+        x + cell * 0.08,
+        y + cell * 0.08,
+        cell * 0.84,
+        cell * 0.84,
+        cell * 0.18
+      );
+      context.fill();
+    } else {
+      context.fillRect(x, y, cell + 0.3, cell + 0.3);
+    }
+  };
+  for (let row = 0; row < count; row += 1) {
+    for (let column = 0; column < count; column += 1) {
+      if (modules.get(row, column) && !isFinder(row, column)) {
+        drawModule(quiet + column * cell, quiet + row * cell);
+      }
+    }
+  }
+  const drawEye = (offsetX: number, offsetY: number) => {
+    const x = quiet + offsetX * cell;
+    const y = quiet + offsetY * cell;
+    context.fillStyle = foreground;
+    if (corner === "circle") {
+      context.beginPath();
+      context.arc(x + cell * 3.5, y + cell * 3.5, cell * 3.5, 0, Math.PI * 2);
+      context.fill();
+    } else if (corner === "rounded") {
+      context.beginPath();
+      context.roundRect(x, y, cell * 7, cell * 7, cell * 1.1);
+      context.fill();
+    } else {
+      context.fillRect(x, y, cell * 7, cell * 7);
+    }
+    context.fillStyle = background;
+    context.fillRect(x + cell, y + cell, cell * 5, cell * 5);
+    context.fillStyle = foreground;
+    if (corner === "circle") {
+      context.beginPath();
+      context.arc(x + cell * 3.5, y + cell * 3.5, cell * 1.7, 0, Math.PI * 2);
+      context.fill();
+    } else {
+      context.fillRect(x + cell * 2, y + cell * 2, cell * 3, cell * 3);
+    }
+  };
+  drawEye(0, 0);
+  drawEye(count - 7, 0);
+  drawEye(0, count - 7);
+}
 
 export default function QrStudio() {
   const { isAuthenticated, loading } = useAuth();
@@ -43,7 +159,9 @@ export default function QrStudio() {
   const [name, setName] = useState("Campaign QR");
   const [foregroundColor, setForegroundColor] = useState("#003D32");
   const [backgroundColor, setBackgroundColor] = useState("#DDF8EC");
-  const [shape, setShape] = useState<"square" | "dots" | "rounded">("rounded");
+  const [shape, setShape] = useState<PatternStyle>("rounded");
+  const [cornerStyle, setCornerStyle] = useState<CornerStyle>("rounded");
+  const [themeId, setThemeId] = useState("konnekt");
   const [frameLabel, setFrameLabel] = useState("SCAN TO CONNECT");
   const [fontFamily, setFontFamily] = useState("Space Grotesk");
   const [creativeName, setCreativeName] = useState("");
@@ -54,6 +172,8 @@ export default function QrStudio() {
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">(
     "mobile"
   );
+  const [editingQrId, setEditingQrId] = useState<number | null>(null);
+  const [editingQrName, setEditingQrName] = useState("");
   const workspace = trpc.workspace.current.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -61,6 +181,13 @@ export default function QrStudio() {
     onSuccess: () => {
       qrList.refetch();
       toast.success("QR code saved to your studio");
+    },
+    onError: e => toast.error(e.message),
+  });
+  const renameQr = trpc.qr.rename.useMutation({
+    onSuccess: () => {
+      qrList.refetch();
+      toast.success("QR label updated");
     },
     onError: e => toast.error(e.message),
   });
@@ -91,12 +218,14 @@ export default function QrStudio() {
   useEffect(() => {
     const render = async () => {
       const canvas = document.createElement("canvas");
-      await QRCode.toCanvas(canvas, target, {
-        width: 720,
-        margin: 2,
-        color: { dark: foregroundColor, light: backgroundColor },
-        errorCorrectionLevel: "H",
-      });
+      drawStyledQr(
+        canvas,
+        target,
+        foregroundColor,
+        backgroundColor,
+        shape,
+        cornerStyle
+      );
       if (!logoDataUrl) return setPreview(canvas.toDataURL("image/png"));
       const image = new Image();
       image.onerror = () => {
@@ -123,7 +252,14 @@ export default function QrStudio() {
       image.src = logoDataUrl;
     };
     void render();
-  }, [target, foregroundColor, backgroundColor, shape, logoDataUrl]);
+  }, [
+    target,
+    foregroundColor,
+    backgroundColor,
+    shape,
+    cornerStyle,
+    logoDataUrl,
+  ]);
   if (loading)
     return (
       <div className="min-h-screen grid place-items-center bg-[#f5f7f9]">
@@ -151,13 +287,20 @@ export default function QrStudio() {
     if (preview) triggerDownload(preview, "png");
   }
   async function downloadSvg() {
-    const svg = await QRCode.toString(target, {
-      type: "svg",
-      margin: 2,
-      color: { dark: foregroundColor, light: backgroundColor },
-      errorCorrectionLevel: "H",
-    });
-    const withLogo = appendLogoToSvg(svg, logoDataUrl);
+    const qr = QRCode.create(target, { errorCorrectionLevel: "H" });
+    const modules = Array.from({ length: qr.modules.size }, (_, row) =>
+      Array.from({ length: qr.modules.size }, (_, column) =>
+        Boolean(qr.modules.get(row, column))
+      )
+    );
+    const withLogo = buildStyledQrSvg(
+      modules,
+      foregroundColor,
+      backgroundColor,
+      shape,
+      cornerStyle,
+      logoDataUrl
+    );
     triggerDownload(
       `data:image/svg+xml;charset=utf-8,${encodeURIComponent(withLogo)}`,
       "svg"
@@ -223,7 +366,8 @@ export default function QrStudio() {
     setManualUrl(qr.destinationUrl ?? "");
     setForegroundColor(qr.foregroundColor);
     setBackgroundColor(qr.backgroundColor);
-    setShape(qr.shape as typeof shape);
+    setShape(qr.shape as PatternStyle);
+    setCornerStyle(qr.cornerStyle as CornerStyle);
     setFrameLabel(qr.frameLabel ?? "SCAN TO CONNECT");
     setLogoDataUrl(qr.logoUrl ?? "");
     setLogoName(qr.logoUrl ? "Saved centre logo" : "");
@@ -352,6 +496,30 @@ export default function QrStudio() {
                   </span>
                 ) : null}
               </label>
+              <label className="block text-xs font-semibold text-slate-600">
+                Quick colour theme
+                <select
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  value={themeId}
+                  onChange={e => {
+                    const theme = qrThemes.find(
+                      item => item.id === e.target.value
+                    );
+                    setThemeId(e.target.value);
+                    if (theme) {
+                      setForegroundColor(theme.foreground);
+                      setBackgroundColor(theme.background);
+                    }
+                  }}
+                >
+                  {qrThemes.map(theme => (
+                    <option key={theme.id} value={theme.id}>
+                      {theme.label}
+                    </option>
+                  ))}
+                  <option value="custom">Custom brand colours</option>
+                </select>
+              </label>
               <div className="grid grid-cols-2 gap-4">
                 <label className="block text-xs font-semibold text-slate-600">
                   Foreground
@@ -359,7 +527,10 @@ export default function QrStudio() {
                     className="mt-1 h-10 w-full cursor-pointer rounded-md border border-slate-200 bg-white p-1"
                     type="color"
                     value={foregroundColor}
-                    onChange={e => setForegroundColor(e.target.value)}
+                    onChange={e => {
+                      setThemeId("custom");
+                      setForegroundColor(e.target.value);
+                    }}
                   />
                 </label>
                 <label className="block text-xs font-semibold text-slate-600">
@@ -368,12 +539,15 @@ export default function QrStudio() {
                     className="mt-1 h-10 w-full cursor-pointer rounded-md border border-slate-200 bg-white p-1"
                     type="color"
                     value={backgroundColor}
-                    onChange={e => setBackgroundColor(e.target.value)}
+                    onChange={e => {
+                      setThemeId("custom");
+                      setBackgroundColor(e.target.value);
+                    }}
                   />
                 </label>
               </div>
               <label className="block text-xs font-semibold text-slate-600">
-                Shape
+                Pattern style
                 <select
                   className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
                   value={shape}
@@ -382,6 +556,18 @@ export default function QrStudio() {
                   <option value="rounded">Rounded modules</option>
                   <option value="dots">Dot modules</option>
                   <option value="square">Square modules</option>
+                </select>
+              </label>
+              <label className="block text-xs font-semibold text-slate-600">
+                Corner eye shape
+                <select
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  value={cornerStyle}
+                  onChange={e => setCornerStyle(e.target.value as CornerStyle)}
+                >
+                  <option value="rounded">Rounded eyes</option>
+                  <option value="square">Square eyes</option>
+                  <option value="circle">Circle eyes</option>
                 </select>
               </label>
               <label className="block text-xs font-semibold text-slate-600">
@@ -468,6 +654,7 @@ export default function QrStudio() {
                       foregroundColor,
                       backgroundColor,
                       shape,
+                      cornerStyle,
                       frameLabel,
                       logoDataUrl: logoDataUrl || undefined,
                     })
@@ -610,10 +797,53 @@ export default function QrStudio() {
                     <div className="mb-3 flex items-center justify-between">
                       <QrCode size={18} style={{ color: qr.foregroundColor }} />
                       <Badge variant="outline" className="rounded-full">
-                        {qr.shape}
+                        {qr.shape} / {qr.cornerStyle}
                       </Badge>
                     </div>
-                    <strong className="block text-sm">{qr.name}</strong>
+                    {editingQrId === qr.id ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={editingQrName}
+                          onChange={e => setEditingQrName(e.target.value)}
+                          className="h-8 text-sm"
+                          aria-label="Custom QR history name"
+                        />
+                        <Button
+                          size="sm"
+                          disabled={
+                            renameQr.isPending ||
+                            editingQrName.trim().length < 2
+                          }
+                          onClick={() => {
+                            renameQr.mutate({
+                              id: qr.id,
+                              name: editingQrName.trim(),
+                            });
+                            setEditingQrId(null);
+                          }}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2">
+                        <strong className="block truncate text-sm">
+                          {qr.name}
+                        </strong>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          aria-label={`Edit ${qr.name}`}
+                          onClick={() => {
+                            setEditingQrId(qr.id);
+                            setEditingQrName(qr.name);
+                          }}
+                        >
+                          <Pencil size={13} />
+                        </Button>
+                      </div>
+                    )}
                     <span className="mt-1 block truncate text-xs text-slate-500">
                       {qr.destinationUrl ||
                         `Smart link ${qr.smartLinkId ?? ""}`}

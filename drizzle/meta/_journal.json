@@ -64,6 +64,13 @@
       "when": 1786694176065,
       "tag": "0008_brief_quentin_quire",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1786711128026,
+      "tag": "0009_aromatic_ghost_rider",
+      "breakpoints": true
     }
   ]
 }

@@ -33,6 +33,7 @@ import {
   listEventRegistrations,
   listWorkspaceEvents,
   listWorkspaceQrCodes,
+  renameQrCode,
   recordConnectionEvent,
   registerAttendee,
 } from "./db";
@@ -418,6 +419,25 @@ export const appRouter = router({
       if (workspace) await requireWorkspaceRole(workspace.id, ctx.user.id);
       return workspace ? listWorkspaceQrCodes(workspace.id) : [];
     }),
+    rename: protectedProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          name: z.string().trim().min(2).max(160),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const workspace = await getOrCreateWorkspace(ctx.user);
+        if (!workspace) throw new Error("Workspace could not be initialized");
+        await requireWorkspaceRole(workspace.id, ctx.user.id, [
+          "owner",
+          "admin",
+          "member",
+        ]);
+        const renamed = await renameQrCode(workspace.id, input.id, input.name);
+        if (!renamed) throw new Error("QR asset not found");
+        return { success: true };
+      }),
     remove: protectedProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
@@ -447,6 +467,9 @@ export const appRouter = router({
             .regex(/^#[0-9A-Fa-f]{6}$/)
             .default("#DDF8EC"),
           shape: z.enum(["square", "dots", "rounded"]).default("rounded"),
+          cornerStyle: z
+            .enum(["square", "rounded", "circle"])
+            .default("rounded"),
           frameLabel: z.string().max(80).optional(),
           logoDataUrl: z.string().max(2_000_000).optional(),
         })
