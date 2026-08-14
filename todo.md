@@ -97,5 +97,5 @@
 - [x] Add preset QR colour themes and custom brand colour controls
 - [x] Add QR pattern and corner-eye shape customization options
 - [x] Add editable custom names or labels for saved QR history items
-- [ ] Add tests, responsive verification, documentation, checkpoint, and GitHub or managed deployment synchronization for the QR Studio styling enhancement
+- [x] Add tests, responsive verification, documentation, checkpoint, and GitHub or managed deployment synchronization for the QR Studio styling enhancement
 - [x] Apply selected pattern and corner-eye styles to SVG exports and add styled-export coverage
