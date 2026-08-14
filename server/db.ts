@@ -322,6 +322,30 @@ export async function checkInRegistration(ticketCode: string) {
   };
 }
 
+export async function getQrScanAnalytics(
+  workspaceId: number,
+  from?: Date,
+  to?: Date
+) {
+  const db = await getDb();
+  if (!db) return [];
+  const clauses = [
+    eq(connectionEvents.workspaceId, workspaceId),
+    eq(connectionEvents.eventType, "scan"),
+  ];
+  if (from) clauses.push(sql`${connectionEvents.occurredAt} >= ${from}` as any);
+  if (to) clauses.push(sql`${connectionEvents.occurredAt} <= ${to}` as any);
+  return db
+    .select({
+      day: sql<string>`DATE(${connectionEvents.occurredAt})`,
+      scans: sql<number>`COUNT(*)`,
+    })
+    .from(connectionEvents)
+    .where(and(...clauses))
+    .groupBy(sql`DATE(${connectionEvents.occurredAt})`)
+    .orderBy(sql`DATE(${connectionEvents.occurredAt})`);
+}
+
 export async function listWorkspaceQrCodes(workspaceId: number) {
   const db = await getDb();
   if (!db) return [];

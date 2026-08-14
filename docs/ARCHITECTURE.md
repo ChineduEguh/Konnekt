@@ -33,3 +33,9 @@ Workspace procedures use authenticated sessions and validate membership before l
 Event operations now include published event creation, attendee registration with email uniqueness per event, unique ticket codes, attendee listing, and protected check-in. A second check-in returns `already_checked_in` instead of mutating the record again. Registration records are persisted in `eventRegistrations`, and ticket state is represented by `registered`, `cancelled`, or `checked_in`.
 
 QR Studio stores dynamic QR assets in `qrCodes`, each bound to a smart link. The client uses the QR encoding library to render a live PNG preview with configurable foreground color, background color, module shape presentation, and frame label. Downloads preserve the QR as a PNG, while the destination remains the smart link redirect path so it can be edited later without reprinting the physical asset.
+
+## QR logos and exports
+
+QR Studio accepts PNG, JPEG, and WebP logo files up to 1 MB. The client composites the logo into a centered high-error-correction panel, while the server uploads the original file to managed storage and persists the returned storage URL on the QR asset.
+
+The analytics page aggregates QR-origin scan events by day and provides date windows for 7, 30, and 90 days. CSV export downloads a portable file directly. The Google Sheets action copies tab-separated data to the clipboard and opens a new Sheet so the user can paste the dataset into a live spreadsheet without exposing credentials to the application. Event management provides the same direct CSV download pattern for attendee records.
